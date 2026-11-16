@@ -1,0 +1,3024 @@
+<!DOCTYPE html>
+<html lang="uk" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyStep: Шлях до оферу — Інтерактивне вивчення Python з нуля до Junior</title>
+  
+  <!-- Підключення сучасних шрифтів Inter та JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Підключення Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bgDeep: '#0B0F19',
+            cardDark: '#111827',
+            cardElevated: '#1E293B',
+            emeraldNeon: '#10B981',
+            indigoNeon: '#6366F1',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.25s ease-out forwards',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(6px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Підключення Pyodide для реального запуску Python 3.11 у браузері -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+  <style>
+    /* Базові стилі скролбару та темної теми розробника */
+    body {
+      background-color: #0B0F19;
+      color: #F1F5F9;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Підсвічування синтаксису Python у теоретичних блоках */
+    .py-kw { color: #818CF8; font-weight: 600; }      /* Ключові слова (def, if, for, return...) */
+    .py-bi { color: #38BDF8; }                        /* Вбудовані функції (print, len, range...) */
+    .py-str { color: #34D399; }                       /* Рядки */
+    .py-num { color: #FBBF24; }                       /* Числа */
+    .py-com { color: #64748B; font-style: italic; }   /* Коментарі */
+    .py-op  { color: #F472B6; }                       /* Оператори та декоратори */
+
+    /* Текстове поле редактора коду з нумерацією рядків */
+    .code-textarea {
+      tab-size: 4;
+      -moz-tab-size: 4;
+      caret-color: #10B981;
+      resize: vertical;
+    }
+    .code-textarea:focus {
+      outline: none;
+    }
+
+    /* Неонове світіння для ключових акцентів */
+    .glow-emerald {
+      box-shadow: 0 0 24px -6px rgba(16, 185, 129, 0.35);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 24px -6px rgba(99, 102, 241, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row selection:bg-indigo-500/30 selection:text-indigo-200">
+
+  <!-- ==================== КОНТЕЙНЕР СПОВІЩЕНЬ (TOASTS) ==================== -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- ==================== МОДАЛЬНЕ ВІКНО ПІДТВЕРДЖЕННЯ СКИДАННЯ ПРОГРЕСУ ==================== -->
+  <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#111827] border border-slate-700/80 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-lg">
+          ⚠️
+        </div>
+        <h3 class="text-lg font-bold text-white">Скинути увесь прогрес?</h3>
+      </div>
+      <p class="text-sm text-slate-400 leading-relaxed mb-6">
+        Усі накопичені бали XP, виконані тести, практичні задачі, міні-проєкти та збережений код будуть очищені. Цю дію неможливо скасувати.
+      </p>
+      <div class="flex items-center justify-end gap-3">
+        <button id="cancel-reset-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition">
+          Скасувати
+        </button>
+        <button id="confirm-reset-btn" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition shadow-lg shadow-rose-600/20">
+          Так, скинути прогрес
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ОВЕРЛЕЙ МОБІЛЬНОГО МЕНЮ ==================== -->
+  <div id="mobile-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+  <!-- ==================== БОКОВА ПАНЕЛЬ НАВІГАЦІЇ (SIDEBAR) ==================== -->
+  <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-[#111827] border-r border-slate-800/80 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shrink-0">
+    <!-- Логотип бренду -->
+    <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+      <button onclick="navigateTo('dashboard')" class="flex items-center gap-3 text-left group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-mono font-bold text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+          &gt;_
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-lg tracking-tight text-white">PyStep</span>
+            <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v3.11</span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">Шлях до оферу</p>
+        </div>
+      </button>
+      <button id="close-sidebar-btn" class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+        ✕
+      </button>
+    </div>
+
+    <!-- Навігація по розділах -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-1">
+      <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+        <span class="flex items-center gap-2.5">
+          <span>🏠</span>
+          <span>Дашборд та Прогрес</span>
+        </span>
+      </button>
+
+      <div class="pt-4 pb-1.5 px-3 flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Навчальна програма</span>
+        <span id="sidebar-total-pct" class="text-[11px] font-mono text-emerald-400">0%</span>
+      </div>
+
+      <!-- Список 7 модулів генерується через JS -->
+      <nav id="modules-nav-list" class="space-y-1"></nav>
+    </div>
+
+    <!-- Нижній блок сайдбару: Рівень та Скидання -->
+    <div class="p-4 border-t border-slate-800/80 bg-[#0B0F19]/60 space-y-3">
+      <div class="bg-[#111827] border border-slate-800 rounded-xl p-3">
+        <div class="flex items-center justify-between text-xs mb-1.5">
+          <span class="text-slate-400">Поточний ранг</span>
+          <span id="sidebar-rank-badge" class="font-semibold text-emerald-400">Новачок</span>
+        </div>
+        <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div id="sidebar-xp-bar" class="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-[11px] font-mono text-slate-500 mt-1.5">
+          <span id="sidebar-xp-text">0 XP</span>
+          <span>1400 XP</span>
+        </div>
+      </div>
+
+      <button onclick="openResetModal()" class="w-full py-2 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition flex items-center justify-center gap-1.5">
+        <span>↺</span>
+        <span>Скинути прогрес навчання</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==================== ОСНОВНА РОБОЧА ОБЛАСТЬ ==================== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    
+    <!-- ВЕРХНЯ ПАНЕЛЬ СТАТУСУ (TOP BAR) -->
+    <header class="sticky top-0 z-20 bg-[#0B0F19]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3">
+      <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Ліва частина: кнопка мобільного меню + нагадування про головну ціль -->
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <button id="open-sidebar-btn" class="lg:hidden p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 hover:bg-slate-700 shrink-0" aria-label="Відкрити меню">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+
+          <!-- Компактний індикатор власної мети в хедері -->
+          <button onclick="focusGoalInput()" title="Натисни, щоб змінити свою головну ціль" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 hover:border-indigo-400/50 text-left max-w-md truncate transition group">
+            <span class="text-sm shrink-0">🎯</span>
+            <span id="topbar-goal-text" class="text-xs text-indigo-200 truncate font-medium">
+              Стати Junior Python розробником і отримати офер!
+            </span>
+            <span class="text-[10px] text-indigo-400 opacity-0 group-hover:opacity-100 transition shrink-0">✎</span>
+          </button>
+        </div>
+
+        <!-- Права частина: Pyodide статус, Streak 🔥, XP та Рівень -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          
+          <!-- Статус Python-рушія (Pyodide) -->
+          <div id="pyodide-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs font-mono text-amber-300">
+            <span id="pyodide-spinner" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+            <span id="pyodide-status-text">Python рушій: Завантаження...</span>
+          </div>
+
+          <!-- Лічильник днів поспіль (Streak) -->
+          <div title="Днів навчання поспіль" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs font-bold">
+            <span>🔥</span>
+            <span id="topbar-streak">1 дн.</span>
+          </div>
+
+          <!-- XP та поточний рівень -->
+          <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+            <div class="text-right">
+              <div class="flex items-center gap-1.5">
+                <span id="topbar-level" class="text-xs font-bold text-emerald-300">Новачок</span>
+                <span class="text-slate-600">•</span>
+                <span id="topbar-xp" class="text-xs font-mono font-bold text-white">0 XP</span>
+              </div>
+              <div class="w-24 sm:w-28 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+                <div id="topbar-xp-bar" class="h-full bg-emerald-400 transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- ДИНАМІЧНИЙ КОНТЕНТ ПЛАТФОРМИ -->
+    <main id="app-view" class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <!-- Рендериться через JavaScript -->
+    </main>
+
+  </div>
+
+  <!-- ==================== ГОЛОВНИЙ СКРИПТ ПЛАТФОРМИ ==================== -->
+  <script>
+    // =========================================================================
+    // 1. МОТИВАЦІЙНІ ПОРАДИ ВІД SENIOR-МЕНТОРА
+    // =========================================================================
+    const MENTOR_QUOTES = [
+      "«Навіть сеньйор колись гуглив, як вийти з циклу. Головне — 30 хвилин коду щодня, без виправдань.»",
+      "«Різниця між джуном, який отримав офер, і тим, хто здався — у кількості вирішених помилок в консолі. Помилка в терміналі — це твій безкоштовний репетитор.»",
+      "«HR та тімлід шукають не ходячу енциклопедію, а людину, яка розуміє логіку і вміє просто пояснити, як працює її код.»",
+      "«Не порівнюй свій 3-й день навчання з чиїмось 3-м роком у продакшені. Порівнюй себе сьогоднішнього з собою вчорашнім.»",
+      "«Кожен написаний власноруч цикл, кожна розібрана функція і кожен міні-проєкт — це цеглинка у твоєму резюме.»",
+      "«Секрет успішної співбесіди простий: спочатку поясни ідею так, ніби говориш із другом за кавою, а потім додай правильні технічні терміни.»",
+      "«Коли здається, що тема складна — розбий її на 3 маленькі кроки. Програмування — це мистецтво ділити велику проблему на крихітні.»",
+      "«Твій майбутній офер вже чекає. Просто не переривай свій Streak сьогодні!»"
+    ];
+
+    // =========================================================================
+    // 2. ПОВНА НАВЧАЛЬНА ПРОГРАМА: 7 МОДУЛІВ (БЕЗ ЗАГЛУШОК)
+    // =========================================================================
+    const MODULES_DATA = [
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 1
+      // -----------------------------------------------------------------------
+      {
+        id: 1,
+        shortTitle: "Основи та як працює Python",
+        title: "Модуль 1: Що таке програмування і як працює Python",
+        subtitle: "Розбираємося, що відбувається «під капотом» при запуску коду, чим інтерпретатор відрізняється від компілятора та створюємо першу програму.",
+        badge: "Старт у IT",
+        theory: {
+          analogyTitle: "Життєва аналогія: Перекладач-синхроніст проти перекладу книги",
+          analogyText: "Уяви, що ти написав інструкцію українською, а процесор комп'ютера розуміє лише мову нулів та одиниць (машинний код). <b>Компілятор</b> (як у C++) бере всю товсту книгу твоєї програми, заздалегідь перекладає її повністю і видає готовий файл. <b>Інтерпретатор</b> (як у Python) працює як синхронний перекладач на конференції: бере код рядок за рядком, перекладає у проміжний <i>байт-код</i> і одразу виконує через віртуальну машину Python (PVM).",
+          blocks: [
+            {
+              heading: "1. Шлях твого коду від натискання «Run» до результату",
+              content: "Коли ти запускаєш файл <code>main.py</code>, Python робить три чіткі кроки: перевіряє синтаксис, компілює твій текст у <b>байт-код</b> (невидимі файли <code>.pyc</code> у папці <code>__pycache__</code>), а далі <b>PVM (Python Virtual Machine)</b> читає цей байт-код і віддає команди процесору.",
+              diagram: [
+                { step: "1. Твій код (.py)", desc: "print('Привіт!')" },
+                { step: "2. Байт-код (.pyc)", desc: "Проміжні інструкції" },
+                { step: "3. PVM (Віртуальна машина)", desc: "Виконання рядок за рядком" },
+                { step: "4. Результат на екрані", desc: "Привіт!" }
+              ]
+            },
+            {
+              heading: "2. Функція print() та коментарі #",
+              content: "Функція <code>print()</code> виводить інформацію в консоль (термінал). Усе, що написано в лапках <code>'...'</code> або <code>\"...\"</code>, Python сприймає як текст. А символ решітки <code>#</code> створює <b>коментар</b> — нотатку для людей, яку інтерпретатор повністю ігнорує.",
+              code: `# Це коментар — Python його не виконує
+print("Привіт, світе IT!")  # Виведе текст у консоль
+print("Мій перший крок до оферу:", 2026)
+# Можна виводити кілька значень через кому — Python сам поставить пробіл`,
+              lineNotes: [
+                "Рядок 1: Коментар пояснює суть коду для інших розробників.",
+                "Рядок 2: Виклик вбудованої функції print() із текстовим рядком.",
+                "Рядок 3: print() може приймати кілька аргументів через кому — рядок і число."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m1_q1",
+            type: "quiz",
+            question: "Що робить Python Virtual Machine (PVM) під час запуску програми?",
+            options: [
+              "Перекладає код одразу в окремий .exe файл для Windows без участі Python",
+              "Читає згенерований байт-код рядок за рядком і виконує інструкції на процесорі",
+              "Видаляє всі коментарі з файлу .py на диску"
+            ],
+            correctIndex: 1,
+            explanation: "Саме так! Спочатку Python транслює вихідний код у байт-код, а потім PVM (Python Virtual Machine) інтерпретує та виконує цей байт-код."
+          },
+          {
+            id: "m1_c1",
+            type: "code",
+            prompt: "Виправ код так, щоб він вивів у консоль слово <code>Python</code>, а рядок з помилкою перетвори на коментар:",
+            starterCode: `# Перетвори рядок нижче на коментар, щоб не було помилки:
+Цей текст зламає програму без решітки
+print("Python")`,
+            expectedOutput: "Python",
+            hint: "Постав символ # на самому початку другого рядка."
+          }
+        ],
+        interview: {
+          hr: "«Python — це сучасна високорівнева мова програмування, яку цінують за швидкість розробки та читабельність, майже як звичайна англійська. На ній пишуть бекенд сайтів, штучний інтелект, аналітику даних та автоматизацію — тому бізнес економить час і гроші на запуску продуктів.»",
+          tech: "«Python — це інтерпретована мова з динамічною сильною типізацією. Під капотом стандартна реалізація CPython спочатку компілює вихідний код (.py) у платформно-незалежний байт-код (.pyc), а потім виконує його в циклі інтерпретації через стекову віртуальну машину PVM. Це дає кросплатформність і швидке прототипування, хоча поступається у швидкості CPU-bound задачам компільованим мовам на кшталт C++ чи Rust.»",
+          followUps: [
+            {
+              q: "Якщо Python інтерпретований, то звідки беруться файли .pyc у папці __pycache__?",
+              a: "Це кеш байт-коду. Щоб не парсити незмінений .py файл щоразу заново, CPython зберігає скомпільований байт-код у .pyc. При наступному запуску PVM одразу бере його, що прискорює старт програми."
+            },
+            {
+              q: "Де Python використовується найчастіше в комерційній розробці?",
+              a: "Backend-розробка (Django, FastAPI, Flask), Data Science та Machine Learning (PyTorch, Pandas), автоматизація тестування (Pytest), DevOps-скрипти та парсинг даних."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m1_p1",
+            title: "Задача 1: Маніфест майбутнього розробника",
+            description: "Напиши програму, яка виведе в консоль рівно два рядки:\n1) <code>Я вивчаю Python!</code>\n2) <code>Моя мета — Junior Developer</code>",
+            starterCode: `# Виведи два рядки за допомогою функції print()
+`,
+            hint: "Виклич функцію print() двічі: один раз для першого рядка, другий — для другого.",
+            solution: `print("Я вивчаю Python!")
+print("Моя мета — Junior Developer")`,
+            testScript: `
+lines = [l.strip() for l in __captured_stdout.strip().splitlines() if l.strip()]
+assert len(lines) >= 2, "Має бути виведено мінімум 2 рядки тексту!"
+assert "Я вивчаю Python!" in lines[0], "Перший рядок має містити: Я вивчаю Python!"
+assert "Junior Developer" in lines[1], "Другий рядок має містити: Моя мета — Junior Developer"
+`
+          },
+          {
+            id: "m1_p2",
+            title: "Задача 2: Арифметика прямо в print()",
+            description: "Python вміє рахувати прямо всередині <code>print()</code>. Обчисли та виведи на екран, скільки годин навчання ти отримаєш за 90 днів, якщо займатимешся по 2 години щодня (має вивести <code>180</code>).",
+            starterCode: `# Виведи результат множення 90 на 2
+`,
+            hint: "Використай знак зірочки * для множення: print(90 * 2)",
+            solution: `print(90 * 2)`,
+            testScript: `
+assert "180" in __captured_stdout, "Очікувалось число 180 у виводі консолі!"
+`
+          },
+          {
+            id: "m1_p3",
+            title: "Задача 3: Роздільник аргументів (sep)",
+            description: "У функції <code>print()</code> є корисний параметр <code>sep</code> (separator — роздільник). Виведи слова <code>Python</code>, <code>FastAPI</code>, <code>PostgreSQL</code> через один <code>print()</code> так, щоб між ними стояв роздільник <code> -> </code>.",
+            starterCode: `# Передай три рядки у print() та додай параметр sep=" -> "
+`,
+            hint: 'Приклад: print("A", "B", sep=" -> ") виведе A -> B',
+            solution: `print("Python", "FastAPI", "PostgreSQL", sep=" -> ")`,
+            testScript: `
+assert "Python -> FastAPI -> PostgreSQL" in __captured_stdout, "Очікуваний вивід: Python -> FastAPI -> PostgreSQL"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 1: «Візитівка розробника»",
+          description: "Створи стильний консольний бейдж-візитівку в ASCII-рамці, який презентує тебе як майбутнього Python-розробника. Такий вивід часто роблять у CLI-утилітах для красивого привітання!",
+          specs: [
+            "Вивести верхню та нижню межу рамки із символів <code>=</code> або <code>*</code>",
+            "Вказати своє ім'я та бажану посаду (наприклад, <code>Junior Python Developer</code>)",
+            "Перелічити стек технологій, який плануєш опанувати (Python, Git, SQL, FastAPI)",
+            "Додати особистий девіз або ціль навчання"
+          ],
+          starterCode: `# Міні-проєкт: Візитівка розробника
+print("=" * 42)
+print("   КАРТКА МАЙБУТНЬОГО РОЗРОБНИКА")
+print("=" * 42)
+print("Ім'я: Олександр")
+print("Роль: Junior Python Developer")
+print("Стек: Python 3.11 | Git | SQL | FastAPI")
+print("Девіз: Код щодня — офер неминучий!")
+print("=" * 42)
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 2
+      // -----------------------------------------------------------------------
+      {
+        id: 2,
+        shortTitle: "Дані, Змінні та Типи даних",
+        title: "Модуль 2: Дані, Змінні та Типи даних",
+        subtitle: "Розуміємо, чому змінні в Python — це ярлики на об'єкти в пам'яті, працюємо з числами, рядками, булевими значеннями та f-рядками.",
+        badge: "Фундамент",
+        theory: {
+          analogyTitle: "Життєва аналогія: Бірка на багажі, а не «коробочка»",
+          analogyText: "У багатьох книжках кажуть, що змінна — це коробочка, куди кладуть значення. У Python це не так! У Python <b>об'єкт створюється в оперативній пам'яті</b>, а змінна — це лише <b>паперовий ярлик (посилання)</b>, прив'язаний до цього об'єкта. Якщо ти напишеш <code>b = a</code>, ти не копіюєш дані, а просто вішаєш другий ярлик на той самий об'єкт у пам'яті!",
+          blocks: [
+            {
+              heading: "1. Базові типи даних та динамічна типізація",
+              content: "Python сам визначає тип даних під час присвоєння — це називається <b>динамічною типізацією</b>. Головні 4 типи: <code>int</code> (цілі числа: <code>25</code>), <code>float</code> (дробові: <code>19.99</code>), <code>str</code> (рядки тексту: <code>\"Київ\"</code>) та <code>bool</code> (логічні <code>True</code> або <code>False</code>). Перевірити тип можна через <code>type()</code>.",
+              code: `age = 24                  # int (ціле число)
+salary_goal = 1200.50     # float (число з плаваючою крапкою)
+city = "Рівне"            # str (рядок)
+is_ready = True           # bool (булевий тип)
+
+print(type(age))          # <class 'int'>
+print(id(age))            # Унікальна адреса об'єкта в пам'яті`,
+              lineNotes: [
+                "Рядки 1–4: Створюємо об'єкти в пам'яті та прив'язуємо до них імена змінних.",
+                "Рядок 6: Функція type() повертає клас (тип) об'єкта.",
+                "Рядок 7: Функція id() показує ідентифікатор (адресу) об'єкта в оперативній пам'яті."
+              ]
+            },
+            {
+              heading: "2. Перетворення типів та сучасні f-рядки",
+              content: "Не можна напряму додати число до рядка (<code>\"Вік: \" + 25</code> викличе <code>TypeError</code>, бо Python має <b>сильну типізацію</b>). Для перетворення використовують <code>int()</code>, <code>float()</code>, <code>str()</code>. А для зручного підставляння змінних у текст використовуй <b>f-рядки</b> (літера <code>f</code> перед лапками).",
+              code: `user_input = "500"
+bonus = int(user_input) + 250   # Перетворили str у int -> 750
+
+name = "Іван"
+print(f"Привіт, {name}! Твій бонус становить {bonus} грн.")`,
+              lineNotes: [
+                "Рядок 2: int('500') перетворює текст на число, щоб виконати математичне додавання.",
+                "Рядок 5: Усередині фігурних дужок { } в f-рядку Python автоматично підставляє значення змінних."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m2_q1",
+            type: "quiz",
+            question: "Що станеться, якщо виконати код: x = '10' + 5 у Python?",
+            options: [
+              "Отримаємо рядок '105'",
+              "Отримаємо число 15",
+              "Виникне помилка TypeError, бо Python не змішує str і int неявно"
+            ],
+            correctIndex: 2,
+            explanation: "Правильно! Python має сильну (строгу) типізацію. На відміну від JavaScript, він не перетворює число на рядок автоматично при додаванні — треба явно написати int('10') + 5 або '10' + str(5)."
+          },
+          {
+            id: "m2_c1",
+            type: "code",
+            prompt: "Використай f-рядок, щоб вивести текст: <code>Курс Python коштує 0 грн</code>, підставивши змінні <code>lang</code> та <code>price</code>:",
+            starterCode: `lang = "Python"
+price = 0
+# Напиши print з f-рядком нижче:
+`,
+            expectedOutput: "Курс Python коштує 0 грн",
+            hint: 'Напиши: print(f"Курс {lang} коштує {price} грн")'
+          }
+        ],
+        interview: {
+          hr: "«У Python не потрібно заздалегідь оголошувати тип кожної змінної — мова сама розуміє, де число, а де текст. Завдяки цьому розробник пише набагато менше шаблонного коду і швидше створює робочий функціонал.»",
+          tech: "«Python має динамічну та сильну (строгу) типізацію. Динамічна означає, що тип прив'язаний не до імені змінної, а до самого об'єкта в купі (heap) під час виконання (runtime), а змінна — це лише посилання (reference). Сильна типізація означає відсутність неявних небезпечних приведень типів (наприклад, str + int викличе TypeError).»",
+          followUps: [
+            {
+              q: "Чим динамічна типізація відрізняється від сильної/слабкої?",
+              a: "Динамічна vs статична — це КОЛИ перевіряються типи (під час виконання чи компіляції). Сильна vs слабка — чи дозволяє мова неявно змішувати різні типи (Python не дозволяє '5' + 2, тому вона сильна)."
+            },
+            {
+              q: "Що буде в пам'яті при виконанні a = [1, 2]; b = a?",
+              a: "Створиться один об'єкт списку в пам'яті, а змінні a та b посилатимуться на ту саму адресу (id(a) == id(b) поверне True)."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m2_p1",
+            title: "Задача 1: Конвертер рядка в число",
+            description: "У змінній <code>raw_days = \"30\"</code> лежить текст. Перетвори її в ціле число <code>int</code>, помнож на <code>24</code> (годин у добі) і збережи результат у змінну <code>total_hours</code>, а потім виведи її через <code>print()</code>.",
+            starterCode: `raw_days = "30"
+# Перетвори raw_days у int, помнож на 24 та виведи total_hours
+`,
+            hint: "total_hours = int(raw_days) * 24",
+            solution: `raw_days = "30"
+total_hours = int(raw_days) * 24
+print(total_hours)`,
+            testScript: `
+assert 'total_hours' in globals(), "Створи змінну total_hours!"
+assert total_hours == 720, f"Очікувалось 720, але отримано {total_hours}"
+assert "720" in __captured_stdout, "Не забудь вивести результат через print()"
+`
+          },
+          {
+            id: "m2_p2",
+            title: "Задача 2: Обмін значень змінних (Pythonic swap)",
+            description: "Дано <code>a = \"Кава\"</code> та <code>b = \"Чай\"</code>. Поміняй їхні значення місцями в один рядок (фірмова фішка Python: <code>a, b = b, a</code>) і виведи спочатку <code>a</code>, потім <code>b</code>.",
+            starterCode: `a = "Кава"
+b = "Чай"
+# Поміняй місцями значення a та b
+
+
+print(a)
+print(b)`,
+            hint: "Напиши рядок: a, b = b, a",
+            solution: `a = "Кава"
+b = "Чай"
+a, b = b, a
+print(a)
+print(b)`,
+            testScript: `
+assert a == "Чай" and b == "Кава", "Змінні a і b мають помінятися значеннями!"
+`
+          },
+          {
+            id: "m2_p3",
+            title: "Задача 3: Профіль кандидата через f-рядок",
+            description: "Є змінні <code>candidate = \"Марія\"</code>, <code>projects = 4</code>, <code>ready = True</code>. Сформуй рядок у змінній <code>summary</code> у форматі: <code>Кандидат: Марія | Проєктів: 4 | Готова до оферу: True</code> і виведи його.",
+            starterCode: `candidate = "Марія"
+projects = 4
+ready = True
+# Створи змінну summary за допомогою f-рядка і виведи її
+`,
+            hint: 'summary = f"Кандидат: {candidate} | Проєктів: {projects} | Готова до оферу: {ready}"',
+            solution: `candidate = "Марія"
+projects = 4
+ready = True
+summary = f"Кандидат: {candidate} | Проєктів: {projects} | Готова до оферу: {ready}"
+print(summary)`,
+            testScript: `
+assert 'summary' in globals(), "Створи змінну summary!"
+expected = "Кандидат: Марія | Проєктів: 4 | Готова до оферу: True"
+assert summary == expected, f"Очікувалось: '{expected}', отримано: '{summary}'"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 2: «Калькулятор бюджету та чайових»",
+          description: "Напиши утиліту для розрахунку спільного чеку в ресторані або командного обіду. Програма повинна порахувати суму з чайовими, податком і розділити її на кількість друзів.",
+          specs: [
+            "Задати суму чеку <code>bill</code>, відсоток чайових <code>tip_percent</code> та кількість людей <code>people</code>",
+            "Розрахувати суму чайових <code>tip_amount</code> та загальний рахунок <code>total_bill</code>",
+            "Порахувати суму на одну людину <code>per_person</code> (використай функцію <code>round(per_person, 2)</code> для округлення до копійок)",
+            "Вивести красиво оформлений фіскальний чек через f-рядки"
+          ],
+          starterCode: `# Міні-проєкт: Калькулятор бюджету та чайових
+bill = 1450.00          # Сума замовлення (грн)
+tip_percent = 12        # Чайові (%)
+people = 3              # Кількість друзів
+
+tip_amount = bill * (tip_percent / 100)
+total_bill = bill + tip_amount
+per_person = round(total_bill / people, 2)
+
+print("--- ФІСКАЛЬНИЙ ЧЕК ---")
+print(f"Сума замовлення: {bill} грн")
+print(f"Чайові ({tip_percent}%):   {round(tip_amount, 2)} грн")
+print(f"Разом до сплати: {round(total_bill, 2)} грн")
+print(f"З кожного ({people} ос.): {per_person} грн")
+print("----------------------")
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 3
+      // -----------------------------------------------------------------------
+      {
+        id: 3,
+        shortTitle: "Умови та Логіка (if / elif / else)",
+        title: "Модуль 3: Умовні конструкції та Логіка (if / elif / else)",
+        subtitle: "Вчимо програму приймати розумні рішення, розбираємо оператори порівняння, булеву алгебру та магію відступів у Python.",
+        badge: "Логіка коду",
+        theory: {
+          analogyTitle: "Життєва аналогія: Навігатор із розвилкою доріг",
+          analogyText: "Коли ти їдеш за навігатором, він перевіряє умову: <i>«Якщо попереду затор (<code>if traffic == True</code>) — поверни праворуч; інакше якщо є платна траса (<code>elif has_highway</code>) — їдь нею; у всіх інших випадках (<code>else</code>) — їдь прямо»</i>. Програма йде зверху вниз і виконує <b>лише першу істинну гілку</b>.",
+          blocks: [
+            {
+              heading: "1. Порівняння, логіка та відступи (Indentation)",
+              content: "У Python блоки коду виділяються не фігурними дужками <code>{}</code>, а <b>4 пробілами відступу</b> після двокрапки <code>:</code>. Запам'ятай: <code>=</code> — це присвоєння значення, а <code>==</code> — перевірка на рівність! Також є <code>!=</code> (не дорівнює), <code>&gt;=</code>, <code>&lt;=</code> та логічні зв'язки <code>and</code> (І), <code>or</code> (АБО), <code>not</code> (НЕ).",
+              code: `experience_months = 4
+english_level = "B1"
+
+if experience_months >= 6 and english_level in ("B1", "B2"):
+    print("Готовий подаватися на Junior!")
+elif experience_months >= 3:
+    print("Чудовий старт! Подавайся на Trainee / Internship.")
+else:
+    print("Продовжуй вчити базу та робити пет-проєкти!")`,
+              lineNotes: [
+                "Рядок 4: and вимагає, щоб ОБИДВІ умови були істинними (True).",
+                "Рядок 6: elif (else if) перевіряється тільки тоді, коли перший if виявився False.",
+                "Рядок 8: else спрацьовує, якщо жодна з попередніх умов не підійшла."
+              ]
+            },
+            {
+              heading: "2. Truthy та Falsy значення в Python",
+              content: "У Python будь-яке значення можна перевірити в <code>if</code>. Порожні речі вважаються <b>Falsy</b> (поводяться як <code>False</code>): число <code>0</code>, порожній рядок <code>\"\"</code>, порожній список <code>[]</code>, значення <code>None</code>. Усе інше — <b>Truthy</b>!",
+              code: `username = ""
+
+if username:
+    print(f"Вітаємо, {username}!")
+else:
+    print("Помилка: ім'я користувача не може бути порожнім!")`,
+              lineNotes: [
+                "Рядок 3: Порожній рядок '' автоматично оцінюється як False, тому виконується гілка else."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m3_q1",
+            type: "quiz",
+            question: "Який результат виведе код: x = 10; print('A') if x > 5 else print('B') (або звичайний блок if x > 5 ... elif x > 2)?",
+            options: [
+              "Виконаються обидві гілки: і if x > 5, і elif x > 2",
+              "Виконається лише перша істинна гілка (if x > 5), а elif буде проігноровано",
+              "Виникне SyntaxError, бо 10 більше і за 5, і за 2"
+            ],
+            correctIndex: 1,
+            explanation: "Точно! Конструкція if / elif / else працює за принципом першого збігу: як тільки одна гілка спрацювала, усі наступні elif та else пропускаються."
+          },
+          {
+            id: "m3_c1",
+            type: "code",
+            prompt: "Допиши умову так, щоб при <code>score = 85</code> програма вивела <code>Іспит складено</code> (прохідний бал — 70 і вище):",
+            starterCode: `score = 85
+# Заміни False на правильну умову:
+if False:
+    print("Іспит складено")
+else:
+    print("Спробуй ще раз")`,
+            expectedOutput: "Іспит складено",
+            hint: "Використай оператор >= : if score >= 70:"
+          }
+        ],
+        interview: {
+          hr: "«Умовні конструкції дозволяють програмі реагувати на різні сценарії користувача: наприклад, перевірити, чи правильний пароль ввів клієнт, або підібрати персональну знижку залежно від суми замовлення.»",
+          tech: "«У Python умовне розгалуження будується через if / elif / else із обов'язковим форматуванням блоків відступами (PEP 8 рекомендує 4 пробіли). Оператори and та or використовують ліниві обчислення (short-circuit evaluation): якщо лівий операнд and дорівнює False, правий навіть не обчислюється. Також Python підтримує концепцію truthiness через магічні методи __bool__ та __len__.»",
+          followUps: [
+            {
+              q: "У чому різниця між операторами == та is у Python?",
+              a: "== порівнює ЗНАЧЕННЯ двох об'єктів (чи однаковий вміст), а is порівнює ІДЕНТИЧНІСТЬ у пам'яті (чи це один і той самий об'єкт, тобто id(a) == id(b)). Для перевірки на None завжди використовують is None."
+            },
+            {
+              q: "Що таке short-circuit evaluation (ліниве обчислення) в логічних операторах?",
+              a: "У виразі A and B, якщо A вже False, Python не перевіряє B. У виразі A or B, якщо A вже True, B не виконується. Це рятує від помилок (наприклад, if user is not None and user.is_active)."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m3_p1",
+            title: "Задача 1: Перевірка парності числа",
+            description: "Оператор остачі від ділення <code>%</code> повертає залишок (наприклад, <code>10 % 2 == 0</code>). Якщо число <code>number = 42</code> парне — виведи <code>Парне</code>, інакше виведи <code>Непарне</code>.",
+            starterCode: `number = 42
+# Напиши перевірку через if / else
+`,
+            hint: "Число парне, якщо number % 2 == 0",
+            solution: `number = 42
+if number % 2 == 0:
+    print("Парне")
+else:
+    print("Непарне")`,
+            testScript: `
+assert "Парне" in __captured_stdout and "Непарне" not in __captured_stdout, "Для 42 має вивестися слово 'Парне'"
+`
+          },
+          {
+            id: "m3_p2",
+            title: "Задача 2: Система грейдів на співбесіді",
+            description: "За кількістю балів <code>points = 78</code> визначи грейд кандидата:\n- 90 і більше -> <code>Strong Junior</code>\n- від 70 до 89 -> <code>Junior</code>\n- менше 70 -> <code>Trainee</code>\nВиведи отриманий грейд.",
+            starterCode: `points = 78
+# Напиши логіку визначення грейду через if / elif / else
+`,
+            hint: "Спочатку перевір points >= 90, потім elif points >= 70, і в кінці else.",
+            solution: `points = 78
+if points >= 90:
+    print("Strong Junior")
+elif points >= 70:
+    print("Junior")
+else:
+    print("Trainee")`,
+            testScript: `
+assert "Junior" in __captured_stdout and "Strong" not in __captured_stdout, "Для 78 балів має вивестися 'Junior'"
+`
+          },
+          {
+            id: "m3_p3",
+            title: "Задача 3: Доступ до продакшн-сервера",
+            description: "Доступ дозволено (<code>Доступ відкрито</code>), тільки якщо <code>is_admin = False</code> або (<code>has_ssh_key = True</code> та <code>is_vpn_connected = True</code>). Інакше виведи <code>Доступ заборонено</code>.",
+            starterCode: `is_admin = False
+has_ssh_key = True
+is_vpn_connected = True
+# Напиши умову з використанням or та and
+`,
+            hint: "if is_admin or (has_ssh_key and is_vpn_connected):",
+            solution: `is_admin = False
+has_ssh_key = True
+is_vpn_connected = True
+
+if is_admin or (has_ssh_key and is_vpn_connected):
+    print("Доступ відкрито")
+else:
+    print("Доступ заборонено")`,
+            testScript: `
+assert "Доступ відкрито" in __captured_stdout, "Має вивестися 'Доступ відкрито'"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 3: «Розумний бот-консультант для входу в IT»",
+          description: "Створи інтелектуальну систему рекомендацій, яка аналізує вподобання кандидата (любов до логіки, даних чи візуалу, а також вільний час на тиждень) та радить оптимальний напрям у IT.",
+          specs: [
+            "Задати параметри профілю: <code>likes_data</code> (bool), <code>likes_backend</code> (bool), <code>hours_per_week</code> (int)",
+            "Перевірити, чи достатньо годин на тиждень (якщо <code>&lt; 7</code> — попередити про повільніший темп)",
+            "За допомогою розгалуженої логіки <code>if / elif / else</code> підібрати напрям: <b>Data Science / ML</b>, <b>Python Backend</b> або <b>QA Automation</b>",
+            "Вивести персональний план старту на перший місяць"
+          ],
+          starterCode: `# Міні-проєкт: Розумний бот-консультант для входу в IT
+likes_data = False
+likes_backend = True
+hours_per_week = 12
+
+print("🤖 Аналізую твій профіль...")
+
+if hours_per_week < 7:
+    print("⚠️ Порада: спробуй виділяти хоча б 1 годину на день для стабільного прогресу.")
+else:
+    print(f"✅ Чудовий темп ({hours_per_week} год/тиждень)! Цього достатньо для впевненого росту.")
+
+if likes_data and not likes_backend:
+    role = "Python Data Analyst / ML Engineer"
+    tools = "Python, Pandas, NumPy, SQL"
+elif likes_backend:
+    role = "Python Backend Developer"
+    tools = "Python, FastAPI / Django, PostgreSQL, Docker"
+else:
+    role = "QA Automation Engineer (Python)"
+    tools = "Python, Pytest, Selenium / Playwright, Git"
+
+print(f"🎯 Рекомендований напрям: {role}")
+print(f"🛠 Ключовий стек для вивчення: {tools}")
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 4
+      // -----------------------------------------------------------------------
+      {
+        id: 4,
+        shortTitle: "Цикли (for та while)",
+        title: "Модуль 4: Цикли (for та while)",
+        subtitle: "Автоматизуємо рутину за принципом DRY, вивчаємо range(), ітерацію по послідовностях та керування потоком через break і continue.",
+        badge: "Автоматизація",
+        theory: {
+          analogyTitle: "Життєва аналогія: Конвеєр на заводі та біг до фінішу",
+          analogyText: "У програмуванні є золоте правило <b>DRY (Don't Repeat Yourself — не повторюйся)</b>. Замість того, щоб 100 разів писати <code>print()</code>, ми запускаємо цикл. <b>Цикл <code>for</code></b> — це як конвеєр, який бере кожну коробку зі стрічки по черзі (відомо скільки разів). <b>Цикл <code>while</code></b> — це як бігун: <i>«біжи, ПОКИ не перетнеш фінішну лінію»</i> (повторюється, поки умова істинна).",
+          blocks: [
+            {
+              heading: "1. Цикл for та функція range()",
+              content: "Функція <code>range(start, stop, step)</code> генерує послідовність чисел. Важливий нюанс на співбесіді: число <code>stop</code> <b>не включається</b>! Наприклад, <code>range(1, 5)</code> дасть числа <code>1, 2, 3, 4</code>.",
+              code: `# Порахуємо від 1 до 5 включно
+for day in range(1, 6):
+    print(f"День {day}: +30 хвилин практики Python!")
+
+# Можна проходити по кожній літері рядка
+for char in "CODE":
+    print(char)`,
+              lineNotes: [
+                "Рядок 2: range(1, 6) генерує 1, 2, 3, 4, 5 (верхня межа 6 не входить).",
+                "Рядок 6: Цикл for вміє перебирати будь-який ітерабельний об'єкт (рядок, список, словник)."
+              ]
+            },
+            {
+              heading: "2. Цикл while, break та continue",
+              content: "<code>while</code> працює, доки умова є <code>True</code>. Обов'язково змінюй лічильник всередині циклу, інакше отримаєш <b>нескінченний цикл</b>! Команда <code>break</code> миттєво зупиняє цикл, а <code>continue</code> пропускає поточний крок і переходить до наступного.",
+              code: `energy = 3
+while energy > 0:
+    print(f"Пишу код... Залишилось енергії: {energy}")
+    energy -= 1  # Зменшуємо на 1 (еквівалент energy = energy - 1)
+
+print("Час зробити перерву та випити води!")`,
+              lineNotes: [
+                "Рядок 4: Ключовий рядок! Без зменшення energy цикл працював би вічно."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m4_q1",
+            type: "quiz",
+            question: "Які числа згенерує виклик range(2, 8, 2)?",
+            options: [
+              "2, 4, 6, 8",
+              "2, 4, 6",
+              "2, 3, 4, 5, 6, 7"
+            ],
+            correctIndex: 1,
+            explanation: "Правильно! Старт з 2, крок 2, верхня межа 8 не включається — отже 2, 4, 6."
+          },
+          {
+            id: "m4_c1",
+            type: "code",
+            prompt: "Виправ цикл так, щоб він вивів суму чисел від 1 до 5 включно (очікуваний результат: <code>15</code>):",
+            starterCode: `total = 0
+# Виправ range(1, 5), щоб включити число 5:
+for i in range(1, 5):
+    total += i
+print(total)`,
+            expectedOutput: "15",
+            hint: "Щоб 5 увійшло в діапазон, передай range(1, 6)."
+          }
+        ],
+        interview: {
+          hr: "«Цикли дозволяють автоматизувати повторювані дії: наприклад, розіслати 10 000 листів клієнтам або перевірити кожен рядок у великому фінансовому звіті за частки секунди.»",
+          tech: "«Цикл for у Python реалізований через протокол ітератора (викликає iter() та next() до винятку StopIteration), тому він використовується для обходу будь-яких ітерабельних об'єктів. Цикл while виконується на основі булевої умови до її спростування або виклику break. Також у Python є унікальна конструкція for...else та while...else — блок else виконується лише тоді, коли цикл завершився штатно без break.»",
+          followUps: [
+            {
+              q: "Навіщо в Python потрібен блок else після циклу for або while?",
+              a: "Він виконується тільки якщо цикл НЕ був перерваний інструкцією break. Це дуже зручно для задач пошуку: якщо знайшли елемент — робимо break; якщо пройшли весь цикл і не знайшли — спрацьовує else."
+            },
+            {
+              q: "У чому різниця між break та continue?",
+              a: "break повністю виходить із циклу достроково, а continue перериває лише поточну ітерацію і переходить до наступного кроку циклу."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m4_p1",
+            title: "Задача 1: Таблиця множення на 7",
+            description: "За допомогою циклу <code>for</code> та <code>range(1, 11)</code> виведи таблицю множення на 7 у форматі: <code>7 x 1 = 7</code> ... <code>7 x 10 = 70</code>.",
+            starterCode: `# Виведи таблицю множення на 7 для чисел від 1 до 10
+`,
+            hint: 'for i in range(1, 11): print(f"7 x {i} = {7 * i}")',
+            solution: `for i in range(1, 11):
+    print(f"7 x {i} = {7 * i}")`,
+            testScript: `
+assert "7 x 1 = 7" in __captured_stdout, "Має бути рядок '7 x 1 = 7'"
+assert "7 x 10 = 70" in __captured_stdout, "Має бути рядок '7 x 10 = 70'"
+`
+          },
+          {
+            id: "m4_p2",
+            title: "Задача 2: Сума лише парних чисел",
+            description: "Порахуй суму всіх <b>парних</b> чисел від 1 до 20 включно і збережи її у змінну <code>even_sum</code>, після чого виведи на екран (має бути <code>110</code>).",
+            starterCode: `even_sum = 0
+# Пройди циклом по range(1, 21) і додавай тільки парні числа
+`,
+            hint: "Використай range(2, 21, 2) або перевірку if num % 2 == 0:",
+            solution: `even_sum = 0
+for num in range(1, 21):
+    if num % 2 == 0:
+        even_sum += num
+print(even_sum)`,
+            testScript: `
+assert 'even_sum' in globals() and even_sum == 110, "even_sum має дорівнювати 110"
+assert "110" in __captured_stdout, "Виведи 110 за допомогою print()"
+`
+          },
+          {
+            id: "m4_p3",
+            title: "Задача 3: Пошук першого числа, кратного 13",
+            description: "Використай цикл <code>while</code>, починаючи з <code>n = 100</code>. Збільшуй <code>n</code> на 1, доки не знайдеш перше число, яке ділиться на <code>13</code> без остачі. Зупини цикл через <code>break</code> і виведи знайдене число (<code>104</code>).",
+            starterCode: `n = 100
+# Знайди перше число >= 100, яке ділиться на 13 без остачі
+`,
+            hint: "while True: if n % 13 == 0: print(n); break; n += 1",
+            solution: `n = 100
+while True:
+    if n % 13 == 0:
+        print(n)
+        break
+    n += 1`,
+            testScript: `
+assert "104" in __captured_stdout, "Перше число >= 100, кратне 13, це 104"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 4: «Тренажер накопичень / Симулятор вкладу»",
+          description: "Створи фінансовий симулятор, який показує магію складного відсотка та регулярних заощаджень. Програма рахує баланс по місяцях і малює візуальну шкалу прогресу!",
+          specs: [
+            "Задати стартовий капітал <code>balance</code>, щомісячне поповнення <code>monthly_deposit</code>, річну ставку <code>annual_rate</code> та строк <code>months</code>",
+            "У циклі <code>for month in range(1, months + 1)</code> нараховувати щомісячний відсоток та додавати внесок",
+            "Вивести звіт за кожен місяць із текстовим індикатором росту (наприклад, символи <code>█</code>)",
+            "Показати підсумковий накопичений капітал у кінці"
+          ],
+          starterCode: `# Міні-проєкт: Симулятор накопичень зі складним відсотком
+balance = 5000.0          # Стартовий капітал (грн)
+monthly_deposit = 2500.0  # Щомісячне поповнення (грн)
+annual_rate = 12.0        # Річна ставка (%)
+months = 6                # Строк у місяцях
+
+monthly_rate = (annual_rate / 100) / 12
+
+print("📈 СИМУЛЯТОР НАКОПИЧЕНЬ:")
+for month in range(1, months + 1):
+    interest = balance * monthly_rate
+    balance = balance + interest + monthly_deposit
+    bars = "█" * int(balance // 1500)
+    print(f"Місяць {month:2d}: {round(balance, 2):8.2f} грн | {bars}")
+
+print(f"\n🏆 Фінальний капітал через {months} міс.: {round(balance, 2)} грн")
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 5
+      // -----------------------------------------------------------------------
+      {
+        id: 5,
+        shortTitle: "Списки (list) та Словники (dict)",
+        title: "Модуль 5: Списки (list) та Словники (dict)",
+        subtitle: "Опановуємо головні структури даних Python: індексація, зрізи, методи списків та блискавичний пошук за ключем O(1) у словниках.",
+        badge: "Структури даних",
+        theory: {
+          analogyTitle: "Життєва аналогія: Нумерований потяг проти телефонної книги",
+          analogyText: "<b>Список (<code>list</code>)</b> — це як потяг із вагонами, пронумерованими з нуля (<code>0, 1, 2...</code>). Ти легко звертаєшся до першого вагона <code>train[0]</code> або останнього <code>train[-1]</code>. <b>Словник (<code>dict</code>)</b> — це як телефонна книга або шафка з підписаними комірками: замість номера ти шукаєш значення миттєво за унікальним <b>ключем</b> (<code>contacts[\"Олена\"]</code>).",
+          blocks: [
+            {
+              heading: "1. Списки (list): індекси, зрізи та методи",
+              content: "Списки створюються у квадратних дужках <code>[]</code> і є <b>змінними (mutable)</b>. Нумерація завжди починається з <code>0</code>! Від'ємний індекс <code>-1</code> бере останній елемент. Зріз <code>items[1:3]</code> бере елементи з 1-го по 2-й включно.",
+              code: `skills = ["Python", "Git", "SQL"]
+skills.append("Docker")        # Додати в кінець списку
+print(skills[0])               # 'Python' (перший елемент)
+print(skills[-1])              # 'Docker' (останній елемент)
+print(skills[1:3])             # ['Git', 'SQL'] (зріз)
+print(len(skills))             # 4 (довжина списку)`,
+              lineNotes: [
+                "Рядок 2: Метод .append() змінює існуючий список на місці (in-place).",
+                "Рядок 4: Від'ємна індексація — одна з найзручніших фішок Python."
+              ]
+            },
+            {
+              heading: "2. Словники (dict): пари ключ-значення та хеш-таблиці",
+              content: "Словники створюються у фігурних дужках <code>{key: value}</code>. Завдяки хеш-таблицям пошук за ключем працює за час <b>O(1)</b> — миттєво, навіть якщо в словнику мільйон записів! Використовуй безпечний метод <code>.get(key, default)</code>, щоб програма не впала з <code>KeyError</code>, якщо ключа немає.",
+              code: `developer = {
+    "name": "Тарас",
+    "level": "Junior",
+    "salary": 1100
+}
+
+developer["city"] = "Львів"               # Додаємо новий ключ
+print(developer.get("english", "B1"))     # Безпечне читання -> 'B1'
+
+for key, value in developer.items():
+    print(f"{key}: {value}")`,
+              lineNotes: [
+                "Рядок 8: Метод .get() повертає 'B1', якщо ключа 'english' ще немає у словнику.",
+                "Рядок 10: .items() дозволяє зручно перебирати одночасно і ключ, і значення."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m5_q1",
+            type: "quiz",
+            question: "Що поверне зріз nums[1:4] для списку nums = [10, 20, 30, 40, 50]?",
+            options: [
+              "[10, 20, 30, 40]",
+              "[20, 30, 40]",
+              "[20, 30, 40, 50]"
+            ],
+            correctIndex: 1,
+            explanation: "Індекс 0 — це 10. Індекс 1 — це 20 (початок входить), індекс 4 — це 50 (кінець НЕ входить). Тому отримуємо [20, 30, 40]."
+          },
+          {
+            id: "m5_c1",
+            type: "code",
+            prompt: "Додай до списку <code>tasks</code> елемент <code>\"Пройти співбесіду\"</code> за допомогою <code>.append()</code> та виведи оновлений список:",
+            starterCode: `tasks = ["Вивчити списки", "Зробити проєкт"]
+# Додай новий елемент і виведи список:
+`,
+            expectedOutput: "Пройти співбесіду",
+            hint: 'tasks.append("Пройти співбесіду")'
+          }
+        ],
+        interview: {
+          hr: "«Списки та словники — це як таблиці та бази даних у мініатюрі. Списки допомагають працювати з чергами завдань чи товарів по порядку, а словники — миттєво знаходити картку клієнта за його ID чи email.»",
+          tech: "«list у Python — це динамічний масив посилань на об'єкти в пам'яті (доступ за індексом O(1), вставка в кінець амортизовано O(1), пошук елемента через in — O(n)). dict реалізований як хеш-таблиця, що забезпечує середню складність пошуку, вставки та видалення за ключем O(1). Ключами словника можуть бути лише хешовані (незмінні) типи: str, int, tuple, але не list чи інший dict.»",
+          followUps: [
+            {
+              q: "Чому список (list) не може бути ключем у словнику (dict)?",
+              a: "Бо список — змінний (mutable) тип даних, тому його хеш міг би змінитися після додавання в словник, що зламало б структуру хеш-таблиці. У Python списки не мають методу __hash__."
+            },
+            {
+              q: "Яка різниця між змінними (mutable) та незмінними (immutable) типами?",
+              a: "Незмінні (int, float, str, tuple, bool) не можна змінити після створення — будь-яка операція створює новий об'єкт у пам'яті. Змінні (list, dict, set) можна модифікувати на місці без зміни їхнього id()."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m5_p1",
+            title: "Задача 1: Аналіз зарплатних пропозицій",
+            description: "Дано список оферів <code>offers = [950, 1200, 800, 1450, 1100]</code>. Знайди максимальний офер за допомогою вбудованої функції <code>max()</code> та середній офер (<code>sum(offers) / len(offers)</code>) і виведи обидва числа.",
+            starterCode: `offers = [950, 1200, 800, 1450, 1100]
+# Знайди max_offer та avg_offer і виведи їх
+`,
+            hint: "max_offer = max(offers); avg_offer = sum(offers) / len(offers)",
+            solution: `offers = [950, 1200, 800, 1450, 1100]
+max_offer = max(offers)
+avg_offer = sum(offers) / len(offers)
+print(max_offer)
+print(avg_offer)`,
+            testScript: `
+assert "1450" in __captured_stdout, "Максимальний офер має бути 1450"
+assert "1100" in __captured_stdout, "Середній офер має бути 1100.0"
+`
+          },
+          {
+            id: "m5_p2",
+            title: "Задача 2: Оновлення профілю у словнику",
+            description: "У словнику <code>user = {\"name\": \"Андрій\", \"role\": \"Student\"}</code> зміни значення ключа <code>\"role\"</code> на <code>\"Junior Python Dev\"</code> та додай новий ключ <code>\"hired\": True</code>. Виведи словник.",
+            starterCode: `user = {"name": "Андрій", "role": "Student"}
+# Онови role та додай hired = True
+`,
+            hint: 'user["role"] = "Junior Python Dev"; user["hired"] = True',
+            solution: `user = {"name": "Андрій", "role": "Student"}
+user["role"] = "Junior Python Dev"
+user["hired"] = True
+print(user)`,
+            testScript: `
+assert user.get("role") == "Junior Python Dev", "Ключ role має бути 'Junior Python Dev'"
+assert user.get("hired") is True, "Ключ hired має дорівнювати True"
+`
+          },
+          {
+            id: "m5_p3",
+            title: "Задача 3: Підрахунок виконаних задач",
+            description: "Є список словників <code>todos</code>. Порахуй у змінній <code>done_count</code>, скільки задач мають <code>\"done\": True</code>, і виведи це число.",
+            starterCode: `todos = [
+    {"title": "Встановити Python", "done": True},
+    {"title": "Написати резюме", "done": False},
+    {"title": "Зробити 5 проєктів", "done": True},
+    {"title": "Пройти тех-скринінг", "done": True},
+]
+done_count = 0
+# Порахуй кількість задач із done == True
+`,
+            hint: 'for item in todos: if item["done"]: done_count += 1',
+            solution: `todos = [
+    {"title": "Встановити Python", "done": True},
+    {"title": "Написати резюме", "done": False},
+    {"title": "Зробити 5 проєктів", "done": True},
+    {"title": "Пройти тех-скринінг", "done": True},
+]
+done_count = 0
+for item in todos:
+    if item["done"]:
+        done_count += 1
+print(done_count)`,
+            testScript: `
+assert done_count == 3, f"Очікувалось 3 виконані задачі, отримано {done_count}"
+assert "3" in __captured_stdout, "Виведи результат через print()"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 5: «Консольний Task-менеджер / Трекер звичок»",
+          description: "Створи трекер щоденних звичок розробника на базі списку словників. Програма додає нову звичку, відмічає виконання, фільтрує невиконані задачі та рахує загальний відсоток продуктивності.",
+          specs: [
+            "Створити список словників <code>habits</code> із полями <code>name</code> та <code>completed</code>",
+            "Додати нову звичку через <code>.append()</code>",
+            "Пройтися циклом <code>for</code>, вивести статус кожної звички (<code>[✓]</code> або <code>[ ]</code>)",
+            "Порахувати та вивести відсоток виконаних звичок за день"
+          ],
+          starterCode: `# Міні-проєкт: Трекер звичок майбутнього розробника
+habits = [
+    {"name": "30 хвилин практики коду", "completed": True},
+    {"name": "Вивчити 10 IT-термінів англійською", "completed": True},
+    {"name": "Вирішити 2 задачі на логіку", "completed": False},
+]
+
+# Додаємо нову звичку
+habits.append({"name": "Зробити коміт у GitHub", "completed": True})
+
+completed_total = 0
+print("📋 ЧЕК-ЛИСТ НА СЬОГОДНІ:")
+
+for habit in habits:
+    mark = "✓" if habit["completed"] else " "
+    if habit["completed"]:
+        completed_total += 1
+    print(f"[{mark}] {habit['name']}")
+
+percent = round((completed_total / len(habits)) * 100)
+print(f"\n🔥 Продуктивність дня: {completed_total}/{len(habits)} ({percent}%)")
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 6
+      // -----------------------------------------------------------------------
+      {
+        id: 6,
+        shortTitle: "Функції та Архітектура (def)",
+        title: "Модуль 6: Функції та Архітектура коду (def)",
+        subtitle: "Проєктуємо чистий модульний код: параметри, аргументи за замовчуванням, критична різниця між return і print(), та правило LEGB.",
+        badge: "Чистий код",
+        theory: {
+          analogyTitle: "Життєва аналогія: Кавомашина — це функція",
+          analogyText: "Уяви кавомашину. Ти засипаєш у неї зерна та воду (<b>вхідні параметри</b>), всередині вона перемелює та заварює їх (<b>тіло функції</b>), а на виході видає чашку готового еспресо (<b><code>return</code></b>). Якщо замість <code>return</code> написати лише <code>print()</code> — це якби кавомашина просто показала на екранчику фотографію кави, але чашку в руки не дала!",
+          blocks: [
+            {
+              heading: "1. Оголошення def, параметри та return проти print()",
+              content: "Функція створюється ключовим словом <code>def</code>. Оператор <code>return</code> завершує роботу функції та повертає результат у місце виклику, щоб його можна було зберегти у змінну або передати далі. Без <code>return</code> функція повертає <code>None</code>.",
+              code: `def calculate_tax(income, tax_rate=0.05):
+    """Розраховує податок ФОП (за замовчуванням 5%)."""
+    tax = income * tax_rate
+    return round(tax, 2)
+
+my_tax = calculate_tax(50000)         # Використає 0.05 -> 2500.0
+custom_tax = calculate_tax(50000, 0.1) # Передаємо свою ставку -> 5000.0
+print(f"Податок до сплати: {my_tax} грн")`,
+              lineNotes: [
+                "Рядок 1: tax_rate=0.05 — аргумент за замовчуванням (необов'язковий при виклику).",
+                "Рядок 4: return віддає число назовні, тому ми змогли зберегти його у my_tax."
+              ]
+            },
+            {
+              heading: "2. Область видимості змінних (Scope / LEGB)",
+              content: "Змінна, створена всередині функції, є <b>локальною</b> — зовні її не видно (вона зникає після завершення функції). Python шукає змінні за правилом <b>LEGB</b>: спочатку <b>L</b>ocal (всередині функції) → <b>E</b>nclosing (зовнішня функція) → <b>G</b>lobal (на рівні файлу) → <b>B</b>uilt-in (вбудовані в Python).",
+              code: `company = "TechCorp"  # Global змінна
+
+def greet_dev(name):
+    role = "Junior"   # Local змінна (існує тільки всередині greet_dev)
+    return f"{name} ({role}) приєднується до {company}!"
+
+print(greet_dev("Олег"))`,
+              lineNotes: [
+                "Рядок 4: Якщо спробувати викликати print(role) за межами функції — отримаємо NameError."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m6_q1",
+            type: "quiz",
+            question: "Що виведе на екран код: def add(a, b): print(a + b); res = add(2, 3); print(res)?",
+            options: [
+              "5 та 5",
+              "5 та None",
+              "Тільки 5"
+            ],
+            correctIndex: 1,
+            explanation: "Геніальне питання з реальних співбесід! Всередині add() спрацює print(5), але оскільки немає return, функція поверне None у змінну res, і другий print(res) виведе None."
+          },
+          {
+            id: "m6_c1",
+            type: "code",
+            prompt: "Напиши функцію <code>square(n)</code>, яка повертає квадрат числа <code>n</code> через <code>return</code>:",
+            starterCode: `def square(n):
+    # Поверни n у квадраті (n * n або n ** 2)
+    pass
+
+print(square(6))`,
+            expectedOutput: "36",
+            hint: "Заміни pass на: return n ** 2"
+          }
+        ],
+        interview: {
+          hr: "«Функції — це як цеглинки конструктора Lego. Замість одного гігантського полотна коду, в якому ніхто не розбереться, ми розбиваємо програму на маленькі зрозумілі функції: одна перевіряє пароль, інша рахує знижку. Це прискорює командну роботу.»",
+          tech: "«Функції в Python є об'єктами першого класу (first-class citizens): їх можна присвоювати змінним, передавати як аргументи іншим функціям і повертати з них. Ключова різниця між print() і return: print() лише відправляє текстове представлення у потік стандартного виводу sys.stdout, тоді як return завершує кадр стеку (stack frame) функції та повертає посилання на об'єкт-результат. Пошук імен відбувається за правилом LEGB.»",
+          followUps: [
+            {
+              q: "Що означає, що функції в Python — об'єкти першого класу?",
+              a: "Це означає, що функція такий самий об'єкт, як число чи рядок: її можна покласти в список, передати в іншу функцію (як callback або декоратор) або повернути як результат."
+            },
+            {
+              q: "Чому небезпечно використовувати змінні об'єкти (наприклад, list) як аргумент за замовчуванням: def f(items=[]):",
+              a: "Значення за замовчуванням обчислюється лише ОДИН РАЗ при створенні функції, а не при кожному виклику! Тому список накопичуватиме дані між викликами. Правильно писати items=None і всередині робити if items is None: items = []."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m6_p1",
+            title: "Задача 1: Функція вітання з дефолтним параметром",
+            description: "Створи функцію <code>welcome(name, role=\"Trainee\")</code>, яка повертає рядок <code>\"Вітаємо, {name}! Твоя роль: {role}\"</code>. Виведи результат виклику <code>welcome(\"Катя\")</code>.",
+            starterCode: `# Оголоси функцію welcome(name, role="Trainee")
+`,
+            hint: 'def welcome(name, role="Trainee"): return f"Вітаємо, {name}! Твоя роль: {role}"',
+            solution: `def welcome(name, role="Trainee"):
+    return f"Вітаємо, {name}! Твоя роль: {role}"
+
+print(welcome("Катя"))`,
+            testScript: `
+assert 'welcome' in globals() and callable(welcome), "Створи функцію welcome!"
+assert welcome("Катя") == "Вітаємо, Катя! Твоя роль: Trainee", "Перевір формат поверненого рядка"
+assert welcome("Іван", "Junior") == "Вітаємо, Іван! Твоя роль: Junior", "Перевір роботу з двома аргументами"
+`
+          },
+          {
+            id: "m6_p2",
+            title: "Задача 2: Фільтр позитивних транзакцій",
+            description: "Напиши функцію <code>sum_positive(numbers)</code>, яка приймає список чисел і повертає суму <b>тільки додатних (&gt; 0)</b> чисел. Перевір на списку <code>[100, -50, 250, -10, 50]</code> (має повернути <code>400</code>).",
+            starterCode: `def sum_positive(numbers):
+    # Поверни суму чисел > 0
+    pass
+
+print(sum_positive([100, -50, 250, -10, 50]))`,
+            hint: "Створи total = 0, пройди циклом по numbers, якщо x > 0: total += x, в кінці return total",
+            solution: `def sum_positive(numbers):
+    total = 0
+    for x in numbers:
+        if x > 0:
+            total += x
+    return total
+
+print(sum_positive([100, -50, 250, -10, 50]))`,
+            testScript: `
+assert sum_positive([100, -50, 250, -10, 50]) == 400, "Для [100, -50, 250, -10, 50] має повернутися 400"
+assert sum_positive([-5, -10]) == 0, "Якщо додатних немає, має повернутися 0"
+`
+          },
+          {
+            id: "m6_p3",
+            title: "Задача 3: Перевірка валідності email",
+            description: "Напиши функцію <code>is_valid_email(email)</code>, яка повертає <code>True</code>, якщо в рядку є символ <code>\"@\"</code> та крапка <code>\".\"</code>, і <code>False</code> інакше.",
+            starterCode: `def is_valid_email(email):
+    # Перевір наявність '@' та '.' у рядку email
+    pass
+
+print(is_valid_email("dev@pystep.ua"))
+print(is_valid_email("invalid-email"))`,
+            hint: 'return "@" in email and "." in email',
+            solution: `def is_valid_email(email):
+    return "@" in email and "." in email
+
+print(is_valid_email("dev@pystep.ua"))
+print(is_valid_email("invalid-email"))`,
+            testScript: `
+assert is_valid_email("dev@pystep.ua") is True, "dev@pystep.ua має бути True"
+assert is_valid_email("invalid-email") is False, "invalid-email має бути False"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 6: «Генератор та аналізатор надійності паролів»",
+          description: "Спроєктуй модульну систему безпеки з окремих чистих функцій, яка перевіряє пароль за 4 критеріями (довжина, цифри, великі літери, спецсимволи) та виставляє оцінку надійності.",
+          specs: [
+            "Створити функцію <code>has_digit(password)</code>, що повертає <code>True</code>, якщо є хоча б одна цифра (<code>char.isdigit()</code>)",
+            "Створити функцію <code>has_upper(password)</code>, що перевіряє наявність великої літери (<code>char.isupper()</code>)",
+            "Створити головну функцію <code>evaluate_password(password)</code>, яка підраховує бали (від 0 до 4) та повертає вердикт",
+            "Протестувати роботу на 3 різних паролях"
+          ],
+          starterCode: `# Міні-проєкт: Аналізатор надійності паролів
+
+def has_digit(password):
+    for char in password:
+        if char.isdigit():
+            return True
+    return False
+
+def has_upper(password):
+    for char in password:
+        if char.isupper():
+            return True
+    return False
+
+def evaluate_password(password):
+    score = 0
+    if len(password) >= 8:
+        score += 1
+    if has_digit(password):
+        score += 1
+    if has_upper(password):
+        score += 1
+    if any(ch in "!@#$%^&*" for ch in password):
+        score += 1
+
+    levels = {0: "Критично слабкий", 1: "Слабкий", 2: "Середній", 3: "Надійний", 4: "Суперзахист 🔐"}
+    return f"Пароль '{password}' -> {score}/4 балів ({levels[score]})"
+
+for pwd in ["12345", "Python2026", "PyStep#2026!"]:
+    print(evaluate_password(pwd))
+`
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // МОДУЛЬ 7
+      // -----------------------------------------------------------------------
+      {
+        id: 7,
+        shortTitle: "Об'єктно-Орієнтоване Програмування",
+        title: "Модуль 7: Об'єктно-Орієнтоване Програмування (ООП)",
+        subtitle: "Фінальний крок до Junior: класи та об'єкти, конструктор __init__, магія self та 4 кити ООП простими словами.",
+        badge: "Рівень Junior 🏆",
+        theory: {
+          analogyTitle: "Життєва аналогія: Архітектурне креслення та реальні будинки",
+          analogyText: "<b>Клас (<code>class</code>)</b> — це креслення будинку: у ньому описано, що в будинку є стіни, колір даху та двері, які можна відчинити. За одним кресленням можна побудувати хоч 100 реальних будинків — це <b>Об'єкти (екземпляри класу)</b>. Один може бути синім, інший зеленим, але структура у них спільна!",
+          blocks: [
+            {
+              heading: "1. Клас, конструктор __init__ та що таке self",
+              content: "Метод <code>__init__</code> викликається автоматично при створенні нового об'єкта. А загадковий перший параметр <code>self</code> — це просто <b>посилання на конкретний екземпляр</b>, з яким зараз працюють (щоб Python не переплутав баланс рахунку Івана з балансом Олени).",
+              code: `class Developer:
+    def __init__(self, name, stack):
+        self.name = name        # Атрибут екземпляра
+        self.stack = stack
+        self.offers = 0
+
+    def get_offer(self):        # Метод класу
+        self.offers += 1
+        return f"🎉 {self.name} ({self.stack}) отримав офер! Всього: {self.offers}"
+
+dev1 = Developer("Максим", "Python / FastAPI")
+print(dev1.get_offer())`,
+              lineNotes: [
+                "Рядок 2: __init__ ініціалізує початковий стан кожного створеного об'єкта.",
+                "Рядок 11: При виклику dev1.get_offer() Python автоматично передає dev1 як аргумент self."
+              ]
+            },
+            {
+              heading: "2. Чотири принципи ООП на пальцях",
+              content: "1) <b>Інкапсуляція</b> — об'єднання даних і методів в одному класі та приховування внутрішніх деталей (наприклад, <code>_balance</code>, щоб ніхто напряму не накрутив гроші, а лише через метод <code>deposit()</code>).<br>2) <b>Наслідування</b> — створення нового класу на базі існуючого (<code>class VIPAccount(BankAccount):</code>), щоб не дублювати код.<br>3) <b>Поліморфізм</b> — однаковий метод працює по-різному для різних об'єктів (<code>dog.speak()</code> → гав, <code>cat.speak()</code> → няв).<br>4) <b>Абстракція</b> — виділення лише головних характеристик об'єкта, приховуючи зайву складність.",
+              code: `class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self._balance = balance  # Інкапсуляція (захищений атрибут)
+
+    def deposit(self, amount):
+        self._balance += amount
+
+class VIPAccount(BankAccount):   # Наслідування від BankAccount
+    def deposit(self, amount):   # Поліморфізм: перевизначаємо метод з кешбеком +5%
+        self._balance += amount * 1.05`,
+              lineNotes: [
+                "Рядок 9: VIPAccount успадковує __init__ і _balance від BankAccount.",
+                "Рядок 10: Поліморфізм дозволяє викликати .deposit() однаково для обох рахунків, але VIP отримає бонус."
+              ]
+            }
+          ]
+        },
+        microTasks: [
+          {
+            id: "m7_q1",
+            type: "quiz",
+            question: "Що таке параметр self у методах класу Python?",
+            options: [
+              "Зарезервоване ключове слово мови, яке не можна назвати інакше",
+              "Посилання на конкретний екземпляр (об'єкт) класу, для якого викликається метод",
+              "Глобальна змінна, спільна для всіх класів у файлі"
+            ],
+            correctIndex: 1,
+            explanation: "Точно! self — це посилання на поточний екземпляр об'єкта, через яке метод отримує доступ до його атрибутів та інших методів."
+          },
+          {
+            id: "m7_c1",
+            type: "code",
+            prompt: "Допиши конструктор <code>__init__</code> у класі <code>Car</code>, щоб він зберігав <code>brand</code> у <code>self.brand</code>:",
+            starterCode: `class Car:
+    def __init__(self, brand):
+        # Збережи brand в атрибут self.brand
+        pass
+
+my_car = Car("Tesla")
+print(my_car.brand)`,
+            expectedOutput: "Tesla",
+            hint: "Напиши всередині __init__: self.brand = brand"
+          }
+        ],
+        interview: {
+          hr: "«ООП дозволяє моделювати реальний бізнес у коді: у нас є сутності Користувач, Замовлення, Оплата. Кожна має свої властивості та правила поведінки. Завдяки цьому великі проєкти легко підтримувати та масштабувати роками.»",
+          tech: "«ООП у Python базується на 4 принципах: Інкапсуляція (групування стану та поведінки, угода про _protected та name mangling через __private), Наслідування (MRO — Method Resolution Order через алгоритм C3-лінеаризації), Поліморфізм (реалізується природно через duck typing: «якщо воно крякає як качка — це качка») та Абстракція (модуль abc та ABC).»",
+          followUps: [
+            {
+              q: "Що таке Duck Typing («качина типізація») у Python?",
+              a: "Це підхід до поліморфізму, коли нам не важливий конкретний клас об'єкта, а важливо лише те, чи є в нього потрібний метод. Наприклад, функція може викликати obj.send() для EmailSender, SmsSender і PushSender без спільного батьківського класу."
+            },
+            {
+              q: "Як у Python реалізується приватність атрибутів (Інкапсуляція)?",
+              a: "У Python немає жорсткого private як у Java/C++. Використовується домовленість: одне підкреслення _attr означає 'внутрішній/захищений атрибут, не чіпай зовні', а подвійне __attr вмикає name mangling (перейменовує в _ClassName__attr)."
+            }
+          ]
+        },
+        practice: [
+          {
+            id: "m7_p1",
+            title: "Задача 1: Клас Книга (Book)",
+            description: "Створи клас <code>Book</code> із конструктором <code>__init__(self, title, author)</code> та методом <code>info(self)</code>, який повертає рядок <code>\"{self.title} — {self.author}\"</code>. Створи об'єкт і виведи результат <code>info()</code>.",
+            starterCode: `# Створи клас Book з атрибутами title, author та методом info()
+`,
+            hint: 'def info(self): return f"{self.title} — {self.author}"',
+            solution: `class Book:
+    def __init__(self, title, author):
+        self.title = title
+        self.author = author
+
+    def info(self):
+        return f"{self.title} — {self.author}"
+
+b = Book("Чистий код", "Роберт Мартін")
+print(b.info())`,
+            testScript: `
+assert 'Book' in globals(), "Створи клас Book!"
+_test_b = Book("Тест", "Автор")
+assert _test_b.info() == "Тест — Автор", "Метод info() має повертати 'Назва — Автор'"
+`
+          },
+          {
+            id: "m7_p2",
+            title: "Задача 2: Лічильник енергії героя",
+            description: "Створи клас <code>Hero</code> із початковим <code>self.hp = 100</code> у <code>__init__(self, name)</code>. Додай метод <code>take_damage(self, damage)</code>, який віднімає <code>damage</code> від <code>self.hp</code>. Перевір на герої з уроном <code>35</code> (має залишитись <code>65</code>).",
+            starterCode: `# Створи клас Hero з hp = 100 та методом take_damage(self, damage)
+`,
+            hint: "self.hp -= damage",
+            solution: `class Hero:
+    def __init__(self, name):
+        self.name = name
+        self.hp = 100
+
+    def take_damage(self, damage):
+        self.hp -= damage
+
+h = Hero("Артур")
+h.take_damage(35)
+print(h.hp)`,
+            testScript: `
+assert 'Hero' in globals(), "Створи клас Hero!"
+_h = Hero("Test")
+assert _h.hp == 100, "Початкове hp має бути 100"
+_h.take_damage(35)
+assert _h.hp == 65, "Після take_damage(35) hp має дорівнювати 65"
+`
+          },
+          {
+            id: "m7_p3",
+            title: "Задача 3: Наслідування Employee -> Developer",
+            description: "Створи базовий клас <code>Employee(name, salary)</code> і дочірній клас <code>Developer(Employee)</code>, який через <code>super().__init__(name, salary)</code> зберігає ім'я та зарплату, а також додає <code>self.language = language</code>.",
+            starterCode: `class Employee:
+    def __init__(self, name, salary):
+        self.name = name
+        self.salary = salary
+
+# Створи дочірній клас Developer(Employee) з параметрами (self, name, salary, language)
+`,
+            hint: "class Developer(Employee):\n    def __init__(self, name, salary, language):\n        super().__init__(name, salary)\n        self.language = language",
+            solution: `class Employee:
+    def __init__(self, name, salary):
+        self.name = name
+        self.salary = salary
+
+class Developer(Employee):
+    def __init__(self, name, salary, language):
+        super().__init__(name, salary)
+        self.language = language
+
+dev = Developer("Софія", 1500, "Python")
+print(dev.name, dev.salary, dev.language)`,
+            testScript: `
+assert 'Developer' in globals(), "Створи клас Developer!"
+assert issubclass(Developer, Employee), "Developer має наслідуватися від Employee"
+_d = Developer("Test", 1000, "Python")
+assert _d.name == "Test" and _d.salary == 1000 and _d.language == "Python", "Перевір атрибути Developer"
+`
+          }
+        ],
+        project: {
+          title: "Міні-проєкт 7: «Симулятор банківського рахунку та VIP-клієнта»",
+          description: "Фінальний проєкт курсу! Об'єднай усі 4 принципи ООП: створи базовий клас банківського рахунку з поповненням, зняттям коштів та перевіркою балансу, а також VIP-рахунок із кешбеком.",
+          specs: [
+            "Реалізувати клас <code>BankAccount</code> з атрибутами <code>owner</code>, <code>_balance</code> та історією операцій",
+            "Додати методи <code>deposit(amount)</code> та <code>withdraw(amount)</code> із перевіркою достатності коштів",
+            "Створити спадкоємця <code>VIPAccount(BankAccount)</code> із автоматичним кешбеком +5% при поповненні",
+            "Провести серію транзакцій та вивести фінальну виписку по обох рахунках"
+          ],
+          starterCode: `# Фінальний проєкт: Симулятор банківського рахунку (ООП)
+
+class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self._balance = balance
+
+    def deposit(self, amount):
+        if amount > 0:
+            self._balance += amount
+            print(f"[+] {self.owner}: поповнення +{amount} грн")
+
+    def withdraw(self, amount):
+        if amount <= self._balance:
+            self._balance -= amount
+            print(f"[-] {self.owner}: зняття -{amount} грн")
+        else:
+            print(f"[!] {self.owner}: недостатньо коштів для зняття {amount} грн!")
+
+    def statement(self):
+        return f"💳 Рахунок [{self.owner}] | Баланс: {round(self._balance, 2)} грн"
+
+
+class VIPAccount(BankAccount):
+    def deposit(self, amount):
+        bonus = amount * 0.05
+        super().deposit(amount + bonus)
+        print(f"   ✨ VIP-кешбек нараховано: +{round(bonus, 2)} грн")
+
+
+# Тестуємо систему
+acc1 = BankAccount("Олександр (Standard)", 1000)
+acc1.deposit(500)
+acc1.withdraw(2000)
+acc1.withdraw(400)
+print(acc1.statement())
+
+print("-" * 45)
+
+acc2 = VIPAccount("Ірина (VIP)", 2000)
+acc2.deposit(1000)
+print(acc2.statement())
+`
+        }
+      }
+    ];
+
+    // =========================================================================
+    // 3. УПРАВЛІННЯ СТАНОМ (LOCALSTORAGE) ТА ГЕЙМІФІКАЦІЯ
+    // =========================================================================
+    const STORAGE_KEY = "pystep_platform_state_v1";
+
+    const DEFAULT_STATE = {
+      xp: 0,
+      streak: 1,
+      lastVisitDate: new Date().toISOString().slice(0, 10),
+      goal: "Стати Junior Python розробником і отримати перший офер в IT!",
+      quoteIndex: 0,
+      completedMicro: {},     // { "m1_q1": true, ... }
+      completedTasks: {},     // { "m1_p1": true, ... }
+      completedProjects: {},  // { "1": true, ... }
+      savedCode: {},          // { "m1_p1": "...", "proj_1": "..." }
+      checkedSpecs: {},       // { "1_0": true, ... }
+      activeView: "dashboard", // "dashboard" | "module_1" .. "module_7"
+      activeTab: "theory"      // "theory" | "micro" | "interview" | "practice" | "project"
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...DEFAULT_STATE };
+        const parsed = JSON.parse(raw);
+        return { ...DEFAULT_STATE, ...parsed };
+      } catch (err) {
+        console.error("Помилка читання localStorage:", err);
+        return { ...DEFAULT_STATE };
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.error("Помилка збереження localStorage:", err);
+      }
+    }
+
+    // Перевірка та оновлення щоденного Streak 🔥
+    function updateDailyStreak() {
+      const today = new Date().toISOString().slice(0, 10);
+      if (state.lastVisitDate !== today) {
+        const last = new Date(state.lastVisitDate);
+        const now = new Date(today);
+        const diffDays = Math.round((now - last) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          state.streak += 1;
+        } else if (diffDays > 1) {
+          state.streak = 1;
+        }
+        state.lastVisitDate = today;
+        saveState();
+      }
+    }
+
+    // Розрахунок рівня на основі XP
+    function getLevelInfo(xp) {
+      if (xp >= 1100) {
+        return { title: "Junior Python Dev", nextXp: 1400, prevXp: 1100, badgeColor: "text-amber-300" };
+      } else if (xp >= 700) {
+        return { title: "Trainee Python Dev", nextXp: 1100, prevXp: 700, badgeColor: "text-indigo-300" };
+      } else if (xp >= 300) {
+        return { title: "Стажер", nextXp: 700, prevXp: 300, badgeColor: "text-sky-300" };
+      } else {
+        return { title: "Новачок", nextXp: 300, prevXp: 0, badgeColor: "text-emerald-300" };
+      }
+    }
+
+    // Нарахування XP без дублювання
+    function awardXP(amount, reasonText) {
+      state.xp += amount;
+      saveState();
+      updateGlobalHUD();
+      showToast(`+${amount} XP! ${reasonText}`, "success");
+    }
+
+    // Розрахунок прогресу по конкретному модулю (0..100%)
+    function getModuleProgress(mod) {
+      let totalItems = 2 + 3 + 1; // 2 мікро + 3 практики + 1 проєкт = 6 елементів
+      let doneItems = 0;
+
+      mod.microTasks.forEach(mt => {
+        if (state.completedMicro[mt.id]) doneItems++;
+      });
+      mod.practice.forEach(pt => {
+        if (state.completedTasks[pt.id]) doneItems++;
+      });
+      if (state.completedProjects[String(mod.id)]) doneItems++;
+
+      return Math.round((doneItems / totalItems) * 100);
+    }
+
+    // Загальний відсоток курсу
+    function getTotalCourseProgress() {
+      const sum = MODULES_DATA.reduce((acc, mod) => acc + getModuleProgress(mod), 0);
+      return Math.round(sum / MODULES_DATA.length);
+    }
+
+    // =========================================================================
+    // 4. РУШІЙ PYTHON У БРАУЗЕРІ (PYODIDE)
+    // =========================================================================
+    let pyodideInstance = null;
+    let pyodideReady = false;
+
+    async function initPyodideEngine() {
+      const statusBadge = document.getElementById("pyodide-status-badge");
+      const statusText = document.getElementById("pyodide-status-text");
+      const spinner = document.getElementById("pyodide-spinner");
+
+      try {
+        if (typeof loadPyodide !== "function") {
+          throw new Error("Pyodide CDN недоступний");
+        }
+        pyodideInstance = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
+        });
+        pyodideReady = true;
+
+        statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-emerald-300";
+        spinner.className = "w-2 h-2 rounded-full bg-emerald-400";
+        statusText.textContent = "Python 3.11 Готовий 🟢";
+      } catch (err) {
+        console.warn("Pyodide fallback warning:", err);
+        statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs font-mono text-rose-300";
+        spinner.className = "w-2 h-2 rounded-full bg-rose-400";
+        statusText.textContent = "Офлайн-режим рушія ⚠️";
+      }
+    }
+
+    // Допоміжна функція перекладу частих помилок Python на зрозумілу українську мову
+    function getFriendlyErrorHint(errorText) {
+      if (errorText.includes("IndentationError")) {
+        return "💡 Підказка ментора: Помилка відступів (IndentationError). У Python після двокрапки (:) потрібно ставити рівно 4 пробіли!";
+      }
+      if (errorText.includes("SyntaxError")) {
+        return "💡 Підказка ментора: Синтаксична помилка (SyntaxError). Перевір, чи не забув ти закрити лапки, дужки або поставити двокрапку : в кінці рядка з if/for/def.";
+      }
+      if (errorText.includes("NameError")) {
+        return "💡 Підказка ментора: Невідоме ім'я (NameError). Можливо, ти зробив одруківку в назві змінної або забув взяти текст у лапки \"...\".";
+      }
+      if (errorText.includes("TypeError")) {
+        return "💡 Підказка ментора: Помилка типів (TypeError). Ти намагаєшся поєднати несумісні типи (наприклад, додати число до рядка без str() або int()).";
+      }
+      if (errorText.includes("ZeroDivisionError")) {
+        return "💡 Підказка ментора: Ділення на нуль! Перевір дільник у своїй формулі.";
+      }
+      if (errorText.includes("IndexError")) {
+        return "💡 Підказка ментора: Вихід за межі списку (IndexError). Пам'ятай, що індексація починається з 0, а останній елемент має індекс len(list) - 1.";
+      }
+      if (errorText.includes("KeyError")) {
+        return "💡 Підказка ментора: Такого ключа немає у словнику (KeyError). Спробуй використати безпечний метод .get('ключ').";
+      }
+      if (errorText.includes("AssertionError")) {
+        return "💡 Перевірка тесту не пройдена — порівняй свій вивід та змінні з умовою задачі.";
+      }
+      return "";
+    }
+
+    // Виконання коду Python у Pyodide із перехопленням stdout, stderr та захистом від input()
+    async function executePython(userCode, testScript = null) {
+      if (!pyodideReady || !pyodideInstance) {
+        return {
+          success: false,
+          output: "",
+          error: "Рушій Python 3.11 ще завантажується. Зачекай кілька секунд і спробуй знову!"
+        };
+      }
+
+      // Ізолюємо глобальний простір для кожного запуску
+      const wrapperPython = `
+import sys, io, builtins
+
+__stdout_buf = io.StringIO()
+__stderr_buf = io.StringIO()
+__old_stdout = sys.stdout
+__old_stderr = sys.stderr
+__old_input = builtins.input
+
+def __mock_input(prompt=""):
+    if prompt:
+        print(prompt, end="")
+    print("[Авто-ввід: Тест]")
+    return "Тест"
+
+sys.stdout = __stdout_buf
+sys.stderr = __stderr_buf
+builtins.input = __mock_input
+
+__exec_globals = {}
+__exec_error = None
+
+try:
+    exec(${JSON.stringify(userCode)}, __exec_globals)
+    __captured_stdout = __stdout_buf.getvalue()
+    __exec_globals["__captured_stdout"] = __captured_stdout
+    ${testScript ? `exec(${JSON.stringify(testScript)}, __exec_globals)` : ""}
+except Exception as e:
+    import traceback
+    __exec_error = traceback.format_exc()
+finally:
+    sys.stdout = __old_stdout
+    sys.stderr = __old_stderr
+    builtins.input = __old_input
+
+(__stdout_buf.getvalue(), __exec_error)
+`;
+
+      try {
+        const resultProxy = await pyodideInstance.runPythonAsync(wrapperPython);
+        const [stdoutStr, errorStr] = resultProxy.toJs();
+        resultProxy.destroy();
+
+        if (errorStr) {
+          // Очищаємо службові рядки стектрейсу, залишаючи суть помилки
+          const cleanErrLines = errorStr
+            .split("\n")
+            .filter(line => !line.includes('File "<exec>", line 22'));
+          const cleanErr = cleanErrLines.join("\n").trim();
+          const hint = getFriendlyErrorHint(cleanErr);
+          return {
+            success: false,
+            output: stdoutStr,
+            error: hint ? `${cleanErr}\n\n${hint}` : cleanErr
+          };
+        }
+
+        return {
+          success: true,
+          output: stdoutStr,
+          error: null
+        };
+      } catch (jsErr) {
+        return {
+          success: false,
+          output: "",
+          error: String(jsErr)
+        };
+      }
+    }
+
+    // =========================================================================
+    // 5. УТИЛІТИ БЕЗПЕЧНОГО РЕНДЕРУ, ПІДСВІТКИ СИНТАКСИСУ ТА TOASTS
+    // =========================================================================
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // Легкий токенізатор для підсвічування прикладів Python у теорії
+    function highlightPython(code) {
+      const escaped = escapeHtml(code);
+      const tokenRegex = /(#.*$)|("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b(def|class|return|if|elif|else|for|while|in|not|and|or|True|False|None|break|continue|pass|import|from|as|try|except|finally|with|is|lambda)\b|\b(print|len|range|int|float|str|bool|list|dict|type|id|round|sum|max|min|any|all|super|input)\b|\b(\d+(?:\.\d+)?)\b/gm;
+
+      return escaped.replace(tokenRegex, (match, comment, str, kw, bi, num) => {
+        if (comment) return `<span class="py-com">${comment}</span>`;
+        if (str) return `<span class="py-str">${str}</span>`;
+        if (kw) return `<span class="py-kw">${kw}</span>`;
+        if (bi) return `<span class="py-bi">${bi}</span>`;
+        if (num) return `<span class="py-num">${num}</span>`;
+        return match;
+      });
+    }
+
+    // Копіювання тексту в буфер обміну без використання clipboard API (безпечно для iframe)
+    function copyTextSafe(text, label = "Текст скопійовано!") {
+      const tempArea = document.createElement("textarea");
+      tempArea.value = text;
+      tempArea.style.position = "fixed";
+      tempArea.style.left = "-9999px";
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand("copy");
+        showToast(label, "info");
+      } catch (e) {
+        showToast("Не вдалося скопіювати текст", "error");
+      }
+      document.body.removeChild(tempArea);
+    }
+
+    // Красиві неблокуючі сповіщення (замість alert)
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+
+      const styles = {
+        success: "bg-[#111827] border-emerald-500/50 text-emerald-200 shadow-emerald-500/15",
+        info: "bg-[#111827] border-indigo-500/50 text-indigo-200 shadow-indigo-500/15",
+        error: "bg-[#111827] border-rose-500/50 text-rose-200 shadow-rose-500/15"
+      };
+      const icons = { success: "🎉", info: "📋", error: "⚠️" };
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm font-medium animate-fade-in ${styles[type] || styles.info}`;
+      toast.innerHTML = `<span class="text-base shrink-0">${icons[type] || "✨"}</span><span>${escapeHtml(message)}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(6px)";
+        toast.style.transition = "all 0.25s ease";
+        setTimeout(() => toast.remove(), 260);
+      }, 3200);
+    }
+
+    // =========================================================================
+    // 6. ОНОВЛЕННЯ ХЕДЕРА ТА БОКОВОГО МЕНЮ
+    // =========================================================================
+    function updateGlobalHUD() {
+      const lvl = getLevelInfo(state.xp);
+      const pctInLevel = Math.min(100, Math.round(((state.xp - lvl.prevXp) / (lvl.nextXp - lvl.prevXp)) * 100));
+      const totalCoursePct = getTotalCourseProgress();
+
+      // Хедер
+      document.getElementById("topbar-streak").textContent = `${state.streak} дн.`;
+      document.getElementById("topbar-level").textContent = lvl.title;
+      document.getElementById("topbar-xp").textContent = `${state.xp} XP`;
+      document.getElementById("topbar-xp-bar").style.width = `${pctInLevel}%`;
+      document.getElementById("topbar-goal-text").textContent = state.goal || "Натисни, щоб задати свою головну ціль...";
+
+      // Сайдбар прогрес
+      document.getElementById("sidebar-rank-badge").textContent = lvl.title;
+      document.getElementById("sidebar-xp-bar").style.width = `${Math.min(100, Math.round((state.xp / 1400) * 100))}%`;
+      document.getElementById("sidebar-xp-text").textContent = `${state.xp} XP`;
+      document.getElementById("sidebar-total-pct").textContent = `${totalCoursePct}%`;
+
+      // Активний пункт меню Дашборд
+      const dashBtn = document.getElementById("nav-dashboard");
+      if (state.activeView === "dashboard") {
+        dashBtn.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition bg-indigo-500/15 text-indigo-300 border border-indigo-500/30";
+      } else {
+        dashBtn.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent";
+      }
+
+      // Список 7 модулів у сайдбарі
+      const listEl = document.getElementById("modules-nav-list");
+      listEl.innerHTML = MODULES_DATA.map(mod => {
+        const isActive = state.activeView === `module_${mod.id}`;
+        const pct = getModuleProgress(mod);
+        const isDone = pct === 100;
+
+        return `
+          <button onclick="navigateTo('module_${mod.id}')"
+            class="w-full text-left px-3 py-2.5 rounded-xl transition flex items-center justify-between gap-2 group border ${
+              isActive
+                ? "bg-emerald-500/12 border-emerald-500/35 text-white"
+                : "border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
+            }">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center shrink-0 ${
+                isDone
+                  ? "bg-emerald-500 text-slate-950"
+                  : isActive
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                    : "bg-slate-800 text-slate-400 group-hover:text-white"
+              }">
+                ${isDone ? "✓" : mod.id}
+              </span>
+              <span class="text-xs font-medium truncate">${escapeHtml(mod.shortTitle)}</span>
+            </div>
+            <span class="text-[10px] font-mono shrink-0 ${isDone ? "text-emerald-400 font-bold" : "text-slate-500"}">
+              ${pct}%
+            </span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    // =========================================================================
+    // 7. НАВІГАЦІЯ ТА РЕНДЕР ДАШБОРДУ
+    // =========================================================================
+    function navigateTo(viewId, tabId = null) {
+      state.activeView = viewId;
+      if (tabId) {
+        state.activeTab = tabId;
+      } else if (viewId.startsWith("module_")) {
+        state.activeTab = "theory";
+      }
+      saveState();
+      closeMobileSidebar();
+      updateGlobalHUD();
+      renderCurrentView();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderCurrentView() {
+      const container = document.getElementById("app-view");
+      if (state.activeView === "dashboard") {
+        renderDashboard(container);
+      } else if (state.activeView.startsWith("module_")) {
+        const modId = parseInt(state.activeView.split("_")[1], 10);
+        const mod = MODULES_DATA.find(m => m.id === modId) || MODULES_DATA[0];
+        renderModuleView(container, mod);
+      }
+    }
+
+    function renderDashboard(container) {
+      const lvl = getLevelInfo(state.xp);
+      const totalPct = getTotalCourseProgress();
+      const completedTasksCount = Object.keys(state.completedTasks).length;
+      const completedProjectsCount = Object.keys(state.completedProjects).length;
+      const currentQuote = MENTOR_QUOTES[state.quoteIndex % MENTOR_QUOTES.length];
+
+      container.innerHTML = `
+        <div class="space-y-8 animate-fade-in">
+          
+          <!-- ГЕРОЙ-БЛОК МОТИВАЦІЇ -->
+          <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#111827] via-[#131C31] to-[#0F172A] border border-slate-800 p-6 sm:p-8 shadow-2xl">
+            <div class="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div class="lg:col-span-7 space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                  <span>🚀</span>
+                  <span>Твій шлях у IT починається тут</span>
+                </div>
+
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  Від першого <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400">print()</span> до впевненого оферу Junior Python Dev
+                </h1>
+
+                <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                  Тут немає сухої академічної води. Кожна тема пояснена людською мовою, закріплюється реальним кодом прямо у браузері та містить готові відповіді для співбесід з HR і тімлідом.
+                </p>
+
+                <!-- Поле "Моя головна ціль" -->
+                <div class="bg-[#0B0F19]/80 border border-indigo-500/30 rounded-2xl p-4 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label for="goal-input" class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                      <span>🎯</span>
+                      <span>Моя головна ціль (навіщо я вчу Python):</span>
+                    </label>
+                    <span id="goal-saved-badge" class="text-[11px] text-emerald-400 font-mono">Збережено ✓</span>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input
+                      id="goal-input"
+                      type="text"
+                      value="${escapeHtml(state.goal)}"
+                      placeholder="Наприклад: Змінити професію, працювати віддалено та заробляти $1200+..."
+                      class="flex-1 bg-[#111827] border border-slate-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition"
+                      oninput="handleGoalChange(this.value)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Права картка: Статистика прогресу та Генератор мотивації -->
+              <div class="lg:col-span-5 space-y-4">
+                <div class="bg-[#0B0F19]/90 border border-slate-800 rounded-2xl p-5 space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Кар'єрний статус</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                      ${lvl.title}
+                    </span>
+                  </div>
+
+                  <!-- Шкала рівнів -->
+                  <div>
+                    <div class="flex justify-between text-xs font-mono mb-1.5">
+                      <span class="text-slate-300">Прогрес курсу: <strong class="text-white">${totalPct}%</strong></span>
+                      <span class="text-emerald-400">${state.xp} / 1400 XP</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5">
+                      <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500 transition-all duration-500" style="width: ${totalPct}%"></div>
+                    </div>
+                    <div class="grid grid-cols-4 text-[10px] text-slate-500 font-medium mt-2 text-center">
+                      <span class="${state.xp >= 0 ? 'text-emerald-400 font-bold' : ''}">Новачок</span>
+                      <span class="${state.xp >= 300 ? 'text-sky-400 font-bold' : ''}">Стажер</span>
+                      <span class="${state.xp >= 700 ? 'text-indigo-400 font-bold' : ''}">Trainee</span>
+                      <span class="${state.xp >= 1100 ? 'text-amber-400 font-bold' : ''}">Junior 🏆</span>
+                    </div>
+                  </div>
+
+                  <!-- Міні-метрики -->
+                  <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80 text-center">
+                    <div class="bg-[#111827] rounded-xl p-2.5">
+                      <div class="text-lg font-extrabold text-amber-400">🔥 ${state.streak}</div>
+                      <div class="text-[11px] text-slate-400">Днів поспіль</div>
+                    </div>
+                    <div class="bg-[#111827] rounded-xl p-2.5">
+                      <div class="text-lg font-extrabold text-emerald-400">${completedTasksCount}/21</div>
+                      <div class="text-[11px] text-slate-400">Задач коду</div>
+                    </div>
+                    <div class="bg-[#111827] rounded-xl p-2.5">
+                      <div class="text-lg font-extrabold text-indigo-400">${completedProjectsCount}/7</div>
+                      <div class="text-[11px] text-slate-400">Міні-проєктів</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Генератор порад ментора -->
+                <div class="bg-gradient-to-r from-indigo-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl p-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                      <span>🧠</span>
+                      <span>Порада від Senior-ментора</span>
+                    </span>
+                    <button onclick="nextMentorQuote()" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-500/30 transition font-medium">
+                      Ще порада ⚡
+                    </button>
+                  </div>
+                  <p id="mentor-quote-text" class="text-xs sm:text-sm text-slate-200 italic leading-relaxed">
+                    ${escapeHtml(currentQuote)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- КАРТА НАВЧАЛЬНОЇ ПРОГРАМИ (7 МОДУЛІВ) -->
+          <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 class="text-xl font-bold text-white">Дорожня карта навчання (7 модулів)</h2>
+                <p class="text-sm text-slate-400">Обирай модуль і рухайся крок за кроком: Теорія → Мікро-тести → Співбесіда → Практика → Проєкт</p>
+              </div>
+              <button onclick="continueLearning()" class="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                <span>Продовжити навчання</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${MODULES_DATA.map(mod => {
+                const pct = getModuleProgress(mod);
+                const isDone = pct === 100;
+                const projDone = !!state.completedProjects[String(mod.id)];
+
+                return `
+                  <div onclick="navigateTo('module_${mod.id}')" class="cursor-pointer group bg-[#111827] hover:bg-[#161F33] border ${isDone ? 'border-emerald-500/40' : 'border-slate-800 hover:border-indigo-500/40'} rounded-2xl p-5 transition-all flex flex-col justify-between gap-4">
+                    <div class="space-y-2.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold ${isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-indigo-300'}">
+                          Модуль ${mod.id} • ${escapeHtml(mod.badge)}
+                        </span>
+                        <span class="text-xs font-mono font-bold ${isDone ? 'text-emerald-400' : 'text-slate-400'}">
+                          ${isDone ? 'Завершено ✓' : `${pct}%`}
+                        </span>
+                      </div>
+
+                      <h3 class="text-base sm:text-lg font-bold text-white group-hover:text-emerald-300 transition">
+                        ${escapeHtml(mod.title.replace(/^Модуль \d+:\s*/, ""))}
+                      </h3>
+
+                      <p class="text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed">
+                        ${escapeHtml(mod.subtitle)}
+                      </p>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full ${isDone ? 'bg-emerald-400' : 'bg-indigo-500'} transition-all duration-500" style="width: ${pct}%"></div>
+                      </div>
+
+                      <div class="flex items-center justify-between text-xs text-slate-400">
+                        <span class="flex items-center gap-1.5">
+                          <span>🚀 Проєкт:</span>
+                          <span class="${projDone ? 'text-emerald-400 font-semibold' : 'text-slate-300'}">
+                            ${escapeHtml(mod.project.title.replace(/^Міні-проєкт \d+:\s*/, ""))}
+                          </span>
+                        </span>
+                        <span class="text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform">Відкрити →</span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </section>
+
+        </div>
+      `;
+    }
+
+    function handleGoalChange(val) {
+      state.goal = val;
+      saveState();
+      document.getElementById("topbar-goal-text").textContent = val || "Натисни, щоб задати свою головну ціль...";
+    }
+
+    function focusGoalInput() {
+      if (state.activeView !== "dashboard") {
+        navigateTo("dashboard");
+      }
+      setTimeout(() => {
+        const inp = document.getElementById("goal-input");
+        if (inp) {
+          inp.focus();
+          inp.select();
+        }
+      }, 60);
+    }
+
+    function nextMentorQuote() {
+      state.quoteIndex = (state.quoteIndex + 1) % MENTOR_QUOTES.length;
+      saveState();
+      const el = document.getElementById("mentor-quote-text");
+      if (el) {
+        el.style.opacity = "0";
+        setTimeout(() => {
+          el.textContent = MENTOR_QUOTES[state.quoteIndex];
+          el.style.opacity = "1";
+          el.style.transition = "opacity 0.25s ease";
+        }, 120);
+      }
+    }
+
+    function continueLearning() {
+      const nextMod = MODULES_DATA.find(m => getModuleProgress(m) < 100) || MODULES_DATA[0];
+      navigateTo(`module_${nextMod.id}`);
+    }
+
+    // =========================================================================
+    // 8. РЕНДЕР СТОРІНКИ МОДУЛЯ (5 ІНТЕРАКТИВНИХ ВКЛАДОК)
+    // =========================================================================
+    function switchModuleTab(tabId) {
+      state.activeTab = tabId;
+      saveState();
+      renderCurrentView();
+    }
+
+    function renderModuleView(container, mod) {
+      const pct = getModuleProgress(mod);
+      const nextMod = MODULES_DATA.find(m => m.id === mod.id + 1);
+      const prevMod = MODULES_DATA.find(m => m.id === mod.id - 1);
+
+      const tabs = [
+        { id: "theory", label: "📖 Теорія під капотом", badge: null },
+        {
+          id: "micro",
+          label: "⚡ Мікро-завдання",
+          badge: `${mod.microTasks.filter(t => state.completedMicro[t.id]).length}/2`
+        },
+        { id: "interview", label: "🎤 Співбесіда (HR & Tech)", badge: null },
+        {
+          id: "practice",
+          label: "💻 Практика",
+          badge: `${mod.practice.filter(p => state.completedTasks[p.id]).length}/3`
+        },
+        {
+          id: "project",
+          label: "🚀 Міні-проєкт",
+          badge: state.completedProjects[String(mod.id)] ? "✓" : "60 XP"
+        }
+      ];
+
+      container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+          
+          <!-- Хлібні крихти та Заголовок модуля -->
+          <div class="bg-[#111827] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 text-slate-400">
+                <button onclick="navigateTo('dashboard')" class="hover:text-white transition">Дашборд</button>
+                <span>/</span>
+                <span class="text-emerald-400 font-semibold">Модуль ${mod.id} із 7</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400">Прогрес теми:</span>
+                <span class="font-mono font-bold text-emerald-400">${pct}%</span>
+              </div>
+            </div>
+
+            <div>
+              <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                ${escapeHtml(mod.title)}
+              </h1>
+              <p class="text-sm text-slate-400 mt-1.5 leading-relaxed">
+                ${escapeHtml(mod.subtitle)}
+              </p>
+            </div>
+
+            <!-- Навігація по 5 обов'язкових секціях модуля -->
+            <div class="flex overflow-x-auto gap-2 pt-2 pb-1 no-scrollbar">
+              ${tabs.map(t => {
+                const active = state.activeTab === t.id;
+                return `
+                  <button onclick="switchModuleTab('${t.id}')"
+                    class="shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition border ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/25"
+                        : "bg-[#0B0F19] text-slate-300 border-slate-800 hover:border-slate-700 hover:text-white"
+                    }">
+                    <span>${t.label}</span>
+                    ${t.badge ? `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono ${active ? 'bg-white/20 text-white' : 'bg-slate-800 text-emerald-400'}">${t.badge}</span>` : ""}
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          </div>
+
+          <!-- КОНТЕНТ АКТИВНОЇ ВКЛАДКИ -->
+          <div id="module-tab-content">
+            ${renderTabBody(mod, state.activeTab)}
+          </div>
+
+          <!-- НИЖНЯ НАВІГАЦІЯ МІЖ ВКЛАДКАМИ ТА МОДУЛЯМИ -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+            <div>
+              ${prevMod ? `
+                <button onclick="navigateTo('module_${prevMod.id}')" class="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-medium transition">
+                  ← Модуль ${prevMod.id}
+                </button>
+              ` : `
+                <button onclick="navigateTo('dashboard')" class="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-medium transition">
+                  ← На Дашборд
+                </button>
+              `}
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              ${renderNextStepButton(mod, nextMod)}
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderNextStepButton(mod, nextMod) {
+      const order = ["theory", "micro", "interview", "practice", "project"];
+      const labels = {
+        micro: "Далі: Мікро-завдання ⚡ →",
+        interview: "Далі: Як відповідати на співбесіді 🎤 →",
+        practice: "Далі: Практика коду 💻 →",
+        project: "Далі: Міні-проєкт теми 🚀 →"
+      };
+      const idx = order.indexOf(state.activeTab);
+      if (idx >= 0 && idx < order.length - 1) {
+        const nextTab = order[idx + 1];
+        return `
+          <button onclick="switchModuleTab('${nextTab}')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold transition shadow-lg shadow-indigo-600/20">
+            ${labels[nextTab]}
+          </button>
+        `;
+      }
+      if (nextMod) {
+        return `
+          <button onclick="navigateTo('module_${nextMod.id}')" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold transition shadow-lg shadow-emerald-500/20">
+            Наступний урок: Модуль ${nextMod.id} →
+          </button>
+        `;
+      }
+      return `
+        <button onclick="navigateTo('dashboard')" class="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-bold transition shadow-lg shadow-amber-400/20">
+          🏆 Завершити курс та перейти до підсумків!
+        </button>
+      `;
+    }
+
+    // =========================================================================
+    // 9. ГЕНЕРАТОРИ КОЖНОЇ З 5 ВКЛАДОК МОДУЛЯ
+    // =========================================================================
+    function renderTabBody(mod, tab) {
+      switch (tab) {
+        case "theory":
+          return renderTheoryTab(mod);
+        case "micro":
+          return renderMicroTasksTab(mod);
+        case "interview":
+          return renderInterviewTab(mod);
+        case "practice":
+          return renderPracticeTab(mod);
+        case "project":
+          return renderProjectTab(mod);
+        default:
+          return renderTheoryTab(mod);
+      }
+    }
+
+    // --- ВКЛАДКА 1: ТЕОРІЯ ПРОСТОЮ МОВОЮ ---
+    function renderTheoryTab(mod) {
+      return `
+        <div class="space-y-6">
+          <!-- Картка життєвої аналогії -->
+          <div class="bg-gradient-to-r from-emerald-950/50 via-[#111827] to-[#111827] border border-emerald-500/30 rounded-2xl p-5 sm:p-6">
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">
+                💡
+              </div>
+              <div class="space-y-1.5">
+                <h2 class="text-base sm:text-lg font-bold text-emerald-300">
+                  ${escapeHtml(mod.theory.analogyTitle)}
+                </h2>
+                <p class="text-sm text-slate-200 leading-relaxed">
+                  ${mod.theory.analogyText}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Теоретичні блоки з діаграмами та кодом -->
+          ${mod.theory.blocks.map(block => `
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+              <h3 class="text-lg font-bold text-white">${escapeHtml(block.heading)}</h3>
+              <p class="text-sm text-slate-300 leading-relaxed">${block.content}</p>
+
+              ${block.diagram ? `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                  ${block.diagram.map((d, i) => `
+                    <div class="bg-[#0B0F19] border border-slate-800 rounded-xl p-3.5 relative">
+                      <div class="text-xs font-bold text-indigo-300 mb-1">${escapeHtml(d.step)}</div>
+                      <div class="text-xs font-mono text-emerald-400">${escapeHtml(d.desc)}</div>
+                      ${i < block.diagram.length - 1 ? `<span class="hidden lg:block absolute -right-2.5 top-1/2 -translate-y-1/2 text-slate-600 font-bold">→</span>` : ""}
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+
+              ${block.code ? `
+                <div class="bg-[#0B0F19] border border-slate-800 rounded-xl overflow-hidden">
+                  <div class="flex items-center justify-between px-4 py-2 bg-slate-900/90 border-b border-slate-800">
+                    <div class="flex items-center gap-1.5">
+                      <span class="w-2.5 h-2.5 rounded-full bg-rose-500/70"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-amber-500/70"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/70"></span>
+                      <span class="text-[11px] font-mono text-slate-400 ml-2">example.py</span>
+                    </div>
+                    <button onclick='copyTextSafe(${JSON.stringify(block.code)}, "Приклад коду скопійовано!")' class="text-xs text-slate-400 hover:text-white transition font-mono">
+                      Копіювати
+                    </button>
+                  </div>
+                  <pre class="p-4 text-xs sm:text-sm font-mono leading-relaxed overflow-x-auto text-slate-100"><code>${highlightPython(block.code)}</code></pre>
+                </div>
+              ` : ""}
+
+              ${block.lineNotes ? `
+                <div class="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 space-y-1.5">
+                  <div class="text-xs font-bold uppercase tracking-wider text-indigo-300 mb-1">Розбір рядків коду:</div>
+                  ${block.lineNotes.map(note => `
+                    <div class="flex items-start gap-2 text-xs text-slate-300">
+                      <span class="text-emerald-400 mt-0.5">▹</span>
+                      <span>${escapeHtml(note)}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // --- ВКЛАДКА 2: МІКРО-ЗАВДАННЯ ПІД ЧАС ТЕМИ ---
+    function renderMicroTasksTab(mod) {
+      const quizTask = mod.microTasks[0];
+      const codeTask = mod.microTasks[1];
+      const quizDone = !!state.completedMicro[quizTask.id];
+      const codeDone = !!state.completedMicro[codeTask.id];
+      const savedMiniCode = state.savedCode[codeTask.id] || codeTask.starterCode;
+
+      return `
+        <div class="space-y-6">
+          <!-- Мікро-завдання 1: Інтерактивний тест -->
+          <div class="bg-[#111827] border ${quizDone ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
+                Мікро-тест 1 • +15 XP
+              </span>
+              ${quizDone ? `<span class="text-xs font-bold text-emerald-400">Виконано ✓</span>` : ""}
+            </div>
+
+            <h3 class="text-base sm:text-lg font-bold text-white">${escapeHtml(quizTask.question)}</h3>
+
+            <div class="space-y-2.5">
+              ${quizTask.options.map((opt, idx) => `
+                <button onclick="handleMicroQuizAnswer(${mod.id}, '${quizTask.id}', ${idx})"
+                  class="w-full text-left p-3.5 rounded-xl border transition text-sm flex items-center gap-3 ${
+                    quizDone && idx === quizTask.correctIndex
+                      ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-200 font-medium"
+                      : "bg-[#0B0F19] border-slate-800 hover:border-indigo-500/50 text-slate-200"
+                  }">
+                  <span class="w-6 h-6 rounded-lg bg-slate-800 text-xs font-mono flex items-center justify-center shrink-0">
+                    ${["A", "B", "C"][idx]}
+                  </span>
+                  <span>${escapeHtml(opt)}</span>
+                </button>
+              `).join("")}
+            </div>
+
+            <div id="quiz-feedback-${quizTask.id}" class="${quizDone ? '' : 'hidden'} p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 leading-relaxed">
+              <strong>Пояснення ментора:</strong> ${escapeHtml(quizTask.explanation)}
+            </div>
+          </div>
+
+          <!-- Мікро-завдання 2: Швидка вставка/виправлення коду -->
+          <div class="bg-[#111827] border ${codeDone ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-5 sm:p-6 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                Мікро-код 2 • +20 XP
+              </span>
+              ${codeDone ? `<span class="text-xs font-bold text-emerald-400">Виконано ✓</span>` : ""}
+            </div>
+
+            <p class="text-sm sm:text-base text-slate-200 leading-relaxed">${codeTask.prompt}</p>
+
+            ${renderCodeEditorWidget(codeTask.id, savedMiniCode, 5)}
+
+            <div class="flex flex-wrap items-center gap-3">
+              <button onclick="runMicroCodeChallenge(${mod.id}, '${codeTask.id}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition flex items-center gap-2">
+                <span>Запустити та перевірити ▶</span>
+              </button>
+              <button onclick="toggleHint('hint-${codeTask.id}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
+                Підказка 💡
+              </button>
+            </div>
+
+            <div id="hint-${codeTask.id}" class="hidden p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
+              💡 ${escapeHtml(codeTask.hint)}
+            </div>
+
+            <!-- Консоль виводу мікро-завдання -->
+            <div id="console-${codeTask.id}" class="hidden bg-[#0B0F19] border border-slate-800 rounded-xl p-4 font-mono text-xs">
+              <div class="text-slate-500 mb-1.5">Вивід консолі:</div>
+              <pre id="console-out-${codeTask.id}" class="whitespace-pre-wrap text-emerald-300"></pre>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleMicroQuizAnswer(modId, taskId, chosenIndex) {
+      const mod = MODULES_DATA.find(m => m.id === modId);
+      const task = mod.microTasks[0];
+      const fbEl = document.getElementById(`quiz-feedback-${taskId}`);
+
+      if (chosenIndex === task.correctIndex) {
+        fbEl.className = "p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200 leading-relaxed animate-fade-in";
+        fbEl.innerHTML = `<strong>Вірно! 🎉</strong> ${escapeHtml(task.explanation)}`;
+        if (!state.completedMicro[taskId]) {
+          state.completedMicro[taskId] = true;
+          awardXP(15, "Мікро-тест пройдено!");
+          updateGlobalHUD();
+        }
+      } else {
+        fbEl.className = "p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs sm:text-sm text-rose-200 leading-relaxed animate-fade-in";
+        fbEl.innerHTML = `<strong>Не зовсім так 🤔</strong> Спробуй ще раз! Згадай принцип роботи, описаний у теорії.`;
+      }
+    }
+
+    async function runMicroCodeChallenge(modId, taskId) {
+      const mod = MODULES_DATA.find(m => m.id === modId);
+      const task = mod.microTasks[1];
+      const code = document.getElementById(`editor-${taskId}`).value;
+      state.savedCode[taskId] = code;
+      saveState();
+
+      const consoleBox = document.getElementById(`console-${taskId}`);
+      const consoleOut = document.getElementById(`console-out-${taskId}`);
+      consoleBox.classList.remove("hidden");
+      consoleOut.className = "whitespace-pre-wrap text-slate-400";
+      consoleOut.textContent = "Виконання...";
+
+      const res = await executePython(code);
+      if (!res.success) {
+        consoleOut.className = "whitespace-pre-wrap text-rose-300";
+        consoleOut.textContent = res.error;
+        return;
+      }
+
+      const out = res.output.trim();
+      consoleOut.className = "whitespace-pre-wrap text-emerald-300";
+      consoleOut.textContent = out || "(Порожній вивід)";
+
+      if (out.includes(task.expectedOutput)) {
+        if (!state.completedMicro[taskId]) {
+          state.completedMicro[taskId] = true;
+          awardXP(20, "Мікро-завдання з коду виконано!");
+          renderCurrentView();
+        } else {
+          showToast("Чудово! Код працює правильно.", "success");
+        }
+      } else {
+        showToast(`Очікувалось у виводі: "${task.expectedOutput}". Перевір код!`, "error");
+      }
+    }
+
+    // --- ВКЛАДКА 3: ЯК ПОЯСНИТИ НА СПІВБЕСІДІ (HR & TECH) ---
+    function renderInterviewTab(mod) {
+      return `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            
+            <!-- Картка для HR / Рекрутера -->
+            <div class="bg-[#111827] border border-emerald-500/35 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-300 text-xs font-bold">
+                    <span>🤝</span>
+                    <span>Простою мовою для HR / рекрутера</span>
+                  </span>
+                  <button onclick='copyTextSafe(${JSON.stringify(mod.interview.hr)}, "Відповідь для HR скопійовано!")' class="text-xs text-slate-400 hover:text-white transition">
+                    Копіювати 📋
+                  </button>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Мета: показати адекватність, бізнес-цінність і вміння пояснювати складне без занудства.
+                </p>
+                <blockquote class="p-4 rounded-xl bg-[#0B0F19] border border-slate-800 text-sm text-slate-100 leading-relaxed">
+                  ${escapeHtml(mod.interview.hr)}
+                </blockquote>
+              </div>
+            </div>
+
+            <!-- Картка для Тімліда / Tech Interview -->
+            <div class="bg-[#111827] border border-indigo-500/35 rounded-2xl p-5 sm:p-6 flex flex-col justify-between gap-4">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-indigo-500/15 text-indigo-300 text-xs font-bold">
+                    <span>👨‍💻</span>
+                    <span>Технічно для тімліда / інтерв'юера</span>
+                  </span>
+                  <button onclick='copyTextSafe(${JSON.stringify(mod.interview.tech)}, "Технічну відповідь скопійовано!")' class="text-xs text-slate-400 hover:text-white transition">
+                    Копіювати 📋
+                  </button>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Мета: продемонструвати глибоке розуміння «під капотом» та правильну термінологію.
+                </p>
+                <blockquote class="p-4 rounded-xl bg-[#0B0F19] border border-slate-800 text-sm text-slate-100 leading-relaxed">
+                  ${escapeHtml(mod.interview.tech)}
+                </blockquote>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Типові підступні питання на тех-співбесіді -->
+          <div class="bg-[#111827] border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <span>🎯</span>
+              <span>Типові додаткові питання інтерв'юера по цій темі</span>
+            </h3>
+
+            <div class="space-y-3">
+              ${mod.interview.followUps.map((item, i) => `
+                <details class="group bg-[#0B0F19] border border-slate-800 rounded-xl p-4" ${i === 0 ? "open" : ""}>
+                  <summary class="cursor-pointer font-semibold text-sm text-indigo-200 flex items-center justify-between gap-2 list-none">
+                    <span>❓ ${escapeHtml(item.q)}</span>
+                    <span class="text-xs text-slate-500 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p class="mt-3 pt-3 border-t border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    ${escapeHtml(item.a)}
+                  </p>
+                </details>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- ВКЛАДКА 4: ПРАКТИКА В КІНЦІ ТЕМИ (3 ЗАВДАННЯ) ---
+    function renderPracticeTab(mod) {
+      return `
+        <div class="space-y-6">
+          ${mod.practice.map((task, idx) => {
+            const isDone = !!state.completedTasks[task.id];
+            const currentCode = state.savedCode[task.id] !== undefined ? state.savedCode[task.id] : task.starterCode;
+
+            return `
+              <div class="bg-[#111827] border ${isDone ? 'border-emerald-500/40' : 'border-slate-800'} rounded-2xl p-5 sm:p-6 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg ${isDone ? 'bg-emerald-500 text-slate-950' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'} font-mono font-bold text-xs flex items-center justify-center">
+                      ${isDone ? "✓" : idx + 1}
+                    </span>
+                    <h3 class="text-base sm:text-lg font-bold text-white">${escapeHtml(task.title)}</h3>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold ${isDone ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-800 text-amber-300'}">
+                    ${isDone ? "Зараховано (+35 XP)" : "+35 XP"}
+                  </span>
+                </div>
+
+                <p class="text-sm text-slate-300 leading-relaxed whitespace-pre-line">${task.description}</p>
+
+                <!-- Редактор коду -->
+                ${renderCodeEditorWidget(task.id, currentCode, 7)}
+
+                <!-- Кнопки керування -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <button onclick="runPracticeCode('${task.id}')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs sm:text-sm transition border border-slate-700 flex items-center gap-1.5">
+                    <span>Запустити код ▶</span>
+                  </button>
+
+                  <button onclick="verifyPracticeTask(${mod.id}, '${task.id}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5">
+                    <span>Перевірити рішення ✓</span>
+                  </button>
+
+                  <button onclick="toggleHint('hint-${task.id}')" class="px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/25 text-xs font-medium transition">
+                    Підказка 💡
+                  </button>
+
+                  <button onclick="toggleHint('sol-${task.id}')" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-xs font-medium transition">
+                    Еталонне рішення 👀
+                  </button>
+                </div>
+
+                <!-- Блок підказки -->
+                <div id="hint-${task.id}" class="hidden p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs sm:text-sm text-amber-200">
+                  <strong>Підказка:</strong> ${escapeHtml(task.hint)}
+                </div>
+
+                <!-- Блок еталонного рішення -->
+                <div id="sol-${task.id}" class="hidden bg-[#0B0F19] border border-indigo-500/30 rounded-xl p-4 space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-indigo-300">Еталонне рішення:</span>
+                    <button onclick='applyReferenceSolution("${task.id}", ${JSON.stringify(task.solution)})' class="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 transition">
+                      Вставити в редактор ↺
+                    </button>
+                  </div>
+                  <pre class="text-xs font-mono text-slate-200 overflow-x-auto"><code>${highlightPython(task.solution)}</code></pre>
+                </div>
+
+                <!-- Консоль виводу -->
+                <div id="console-${task.id}" class="hidden bg-[#0B0F19] border border-slate-800 rounded-xl p-4 font-mono text-xs">
+                  <div class="flex items-center justify-between text-slate-500 mb-1.5">
+                    <span>Термінал Python 3.11</span>
+                    <span id="console-status-${task.id}"></span>
+                  </div>
+                  <pre id="console-out-${task.id}" class="whitespace-pre-wrap text-emerald-300 leading-relaxed"></pre>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    async function runPracticeCode(taskId) {
+      const code = document.getElementById(`editor-${taskId}`).value;
+      state.savedCode[taskId] = code;
+      saveState();
+
+      const consoleBox = document.getElementById(`console-${taskId}`);
+      const consoleOut = document.getElementById(`console-out-${taskId}`);
+      const consoleStatus = document.getElementById(`console-status-${taskId}`);
+
+      consoleBox.classList.remove("hidden");
+      consoleStatus.textContent = "Виконання...";
+      consoleOut.className = "whitespace-pre-wrap text-slate-400";
+      consoleOut.textContent = "Запускаємо код у Pyodide...";
+
+      const res = await executePython(code);
+      if (res.success) {
+        consoleStatus.innerHTML = `<span class="text-emerald-400">Exit Code: 0</span>`;
+        consoleOut.className = "whitespace-pre-wrap text-emerald-300 leading-relaxed";
+        consoleOut.textContent = res.output || "(Програма виконалась успішно без текстового виводу)";
+      } else {
+        consoleStatus.innerHTML = `<span class="text-rose-400">Помилка виконання</span>`;
+        consoleOut.className = "whitespace-pre-wrap text-rose-300 leading-relaxed";
+        consoleOut.textContent = res.error;
+      }
+    }
+
+    async function verifyPracticeTask(modId, taskId) {
+      const mod = MODULES_DATA.find(m => m.id === modId);
+      const task = mod.practice.find(t => t.id === taskId);
+      const code = document.getElementById(`editor-${taskId}`).value;
+      state.savedCode[taskId] = code;
+      saveState();
+
+      const consoleBox = document.getElementById(`console-${taskId}`);
+      const consoleOut = document.getElementById(`console-out-${taskId}`);
+      const consoleStatus = document.getElementById(`console-status-${taskId}`);
+
+      consoleBox.classList.remove("hidden");
+      consoleStatus.textContent = "Тестування...";
+
+      const res = await executePython(code, task.testScript);
+      if (res.success) {
+        consoleStatus.innerHTML = `<span class="text-emerald-400 font-bold">Усі автотести пройдено ✓</span>`;
+        consoleOut.className = "whitespace-pre-wrap text-emerald-300 leading-relaxed";
+        consoleOut.textContent = (res.output ? res.output + "\n\n" : "") + "✅ Автоматична перевірка: Рішення повністю відповідає умові задачі!";
+
+        if (!state.completedTasks[taskId]) {
+          state.completedTasks[taskId] = true;
+          awardXP(35, `Задачу "${task.title}" вирішено!`);
+          renderCurrentView();
+        } else {
+          showToast("Рішення підтверджено автотестами! ✓", "success");
+        }
+      } else {
+        consoleStatus.innerHTML = `<span class="text-rose-400 font-bold">Тест не пройдено ✕</span>`;
+        consoleOut.className = "whitespace-pre-wrap text-rose-300 leading-relaxed";
+        consoleOut.textContent = (res.output ? "Вивід програми:\n" + res.output + "\n\n" : "") + res.error;
+      }
+    }
+
+    function applyReferenceSolution(taskId, solutionCode) {
+      const editor = document.getElementById(`editor-${taskId}`);
+      if (editor) {
+        editor.value = solutionCode;
+        state.savedCode[taskId] = solutionCode;
+        saveState();
+        updateEditorLineNumbers(taskId);
+        showToast("Еталонне рішення вставлено в редактор!", "info");
+      }
+    }
+
+    // --- ВКЛАДКА 5: МІНІ-ПРОЄКТ ТЕМИ ---
+    function renderProjectTab(mod) {
+      const projKey = `proj_${mod.id}`;
+      const isDone = !!state.completedProjects[String(mod.id)];
+      const currentCode = state.savedCode[projKey] !== undefined ? state.savedCode[projKey] : mod.project.starterCode;
+
+      return `
+        <div class="space-y-6">
+          <div class="bg-gradient-to-br from-[#111827] to-[#131C31] border ${isDone ? 'border-emerald-500/40' : 'border-indigo-500/35'} rounded-2xl p-5 sm:p-6 space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold">
+                <span>🏆</span>
+                <span>Практичний міні-проєкт модулю • +60 XP</span>
+              </span>
+              ${isDone ? `<span class="text-xs font-bold text-emerald-400">Проєкт зараховано ✓</span>` : ""}
+            </div>
+
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">${escapeHtml(mod.project.title)}</h2>
+              <p class="text-sm text-slate-300 mt-1.5 leading-relaxed">${escapeHtml(mod.project.description)}</p>
+            </div>
+
+            <!-- Інтерактивний чек-лист ТЗ -->
+            <div class="bg-[#0B0F19]/90 border border-slate-800 rounded-xl p-4 space-y-2.5">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-300">
+                Технічне завдання (відмічай виконані пункти):
+              </div>
+              ${mod.project.specs.map((spec, i) => {
+                const specId = `${mod.id}_${i}`;
+                const checked = !!state.checkedSpecs[specId];
+                return `
+                  <label class="flex items-start gap-2.5 cursor-pointer text-xs sm:text-sm text-slate-200 hover:text-white">
+                    <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleProjectSpec('${specId}', this.checked)"
+                      class="mt-1 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500" />
+                    <span class="${checked ? 'line-through text-slate-500' : ''}">${spec}</span>
+                  </label>
+                `;
+              }).join("")}
+            </div>
+
+            <!-- Пісочниця проєкту -->
+            ${renderCodeEditorWidget(projKey, currentCode, 14)}
+
+            <div class="flex flex-wrap items-center gap-3">
+              <button onclick="runProjectCode(${mod.id}, false)" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs sm:text-sm transition border border-slate-700">
+                Запустити проєкт ▶
+              </button>
+
+              <button onclick="runProjectCode(${mod.id}, true)" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20">
+                Зарахувати проєкт (+60 XP) 🏆
+              </button>
+
+              <button onclick='resetProjectStarter(${mod.id})' class="px-3.5 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white transition">
+                Відновити шаблон ↺
+              </button>
+            </div>
+
+            <div id="console-${projKey}" class="hidden bg-[#0B0F19] border border-slate-800 rounded-xl p-4 font-mono text-xs">
+              <div class="text-slate-500 mb-1.5">Результат виконання міні-проєкту:</div>
+              <pre id="console-out-${projKey}" class="whitespace-pre-wrap text-emerald-300 leading-relaxed"></pre>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleProjectSpec(specId, isChecked) {
+      state.checkedSpecs[specId] = isChecked;
+      saveState();
+      renderCurrentView();
+    }
+
+    function resetProjectStarter(modId) {
+      const mod = MODULES_DATA.find(m => m.id === modId);
+      const projKey = `proj_${modId}`;
+      state.savedCode[projKey] = mod.project.starterCode;
+      saveState();
+      renderCurrentView();
+      showToast("Стартовий шаблон проєкту відновлено", "info");
+    }
+
+    async function runProjectCode(modId, shouldAward) {
+      const projKey = `proj_${modId}`;
+      const code = document.getElementById(`editor-${projKey}`).value;
+      state.savedCode[projKey] = code;
+      saveState();
+
+      const consoleBox = document.getElementById(`console-${projKey}`);
+      const consoleOut = document.getElementById(`console-out-${projKey}`);
+      consoleBox.classList.remove("hidden");
+      consoleOut.className = "whitespace-pre-wrap text-slate-400";
+      consoleOut.textContent = "Запускаємо проєкт...";
+
+      const res = await executePython(code);
+      if (!res.success) {
+        consoleOut.className = "whitespace-pre-wrap text-rose-300 leading-relaxed";
+        consoleOut.textContent = res.error;
+        return;
+      }
+
+      consoleOut.className = "whitespace-pre-wrap text-emerald-300 leading-relaxed";
+      consoleOut.textContent = res.output || "(Проєкт виконався без текстового виводу)";
+
+      if (shouldAward) {
+        if (res.output.trim().length < 5) {
+          showToast("Додай вивід результату роботи проєкту через print(), щоб зарахувати!", "error");
+          return;
+        }
+        if (!state.completedProjects[String(modId)]) {
+          state.completedProjects[String(modId)] = true;
+          awardXP(60, `Міні-проєкт Модуля ${modId} завершено!`);
+          renderCurrentView();
+        } else {
+          showToast("Проєкт вже зараховано! Чудова робота 🚀", "success");
+        }
+      }
+    }
+
+    // =========================================================================
+    // 10. ВІДЖЕТ РЕДАКТОРА КОДУ З НУМЕРАЦІЄЮ РЯДКІВ ТА SMART-TAB
+    // =========================================================================
+    function renderCodeEditorWidget(editorId, initialCode, rows = 8) {
+      const lineCount = Math.max(rows, initialCode.split("\n").length);
+      const numbersHtml = Array.from({ length: lineCount }, (_, i) => i + 1).join("\n");
+
+      return `
+        <div class="bg-[#0B0F19] border border-slate-700/80 focus-within:border-emerald-500/70 rounded-xl overflow-hidden transition">
+          <div class="flex items-center justify-between px-3.5 py-2 bg-slate-900 border-b border-slate-800 text-[11px] font-mono text-slate-400">
+            <span class="flex items-center gap-2">
+              <span class="text-emerald-400 font-bold">Python</span>
+              <span>•</span>
+              <span>Tab = 4 пробіли</span>
+            </span>
+            <span class="hidden sm:inline text-slate-500">Автозбереження увімкнено</span>
+          </div>
+          <div class="flex relative font-mono text-xs sm:text-sm">
+            <pre id="gutter-${editorId}" aria-hidden="true" class="select-none py-3.5 px-3 text-right text-slate-600 bg-slate-950/60 border-r border-slate-800/80 leading-relaxed">${numbersHtml}</pre>
+            <textarea
+              id="editor-${editorId}"
+              rows="${rows}"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+              oninput="handleEditorInput('${editorId}')"
+              onkeydown="handleEditorKeydown(event, '${editorId}')"
+              class="code-textarea flex-1 bg-transparent text-slate-100 p-3.5 leading-relaxed w-full overflow-x-auto"
+            >${escapeHtml(initialCode)}</textarea>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateEditorLineNumbers(editorId) {
+      const textarea = document.getElementById(`editor-${editorId}`);
+      const gutter = document.getElementById(`gutter-${editorId}`);
+      if (!textarea || !gutter) return;
+      const lines = textarea.value.split("\n").length;
+      const minRows = parseInt(textarea.getAttribute("rows") || "6", 10);
+      const count = Math.max(minRows, lines);
+      gutter.textContent = Array.from({ length: count }, (_, i) => i + 1).join("\n");
+    }
+
+    function handleEditorInput(editorId) {
+      updateEditorLineNumbers(editorId);
+      const textarea = document.getElementById(`editor-${editorId}`);
+      if (textarea) {
+        state.savedCode[editorId] = textarea.value;
+        saveState();
+      }
+    }
+
+    // Підтримка Tab (4 пробіли) та розумного авто-відступу після двокрапки (:)
+    function handleEditorKeydown(e, editorId) {
+      const textarea = e.target;
+
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        textarea.value = textarea.value.substring(0, start) + "    " + textarea.value.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + 4;
+        handleEditorInput(editorId);
+      } else if (e.key === "Enter") {
+        const start = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, start);
+        const currentLine = textBefore.split("\n").pop();
+        const indentMatch = currentLine.match(/^\s*/);
+        let indent = indentMatch ? indentMatch[0] : "";
+
+        // Якщо рядок закінчується двокрапкою (if, for, while, def, class), додаємо +4 пробіли
+        if (currentLine.trimEnd().endsWith(":")) {
+          indent += "    ";
+        }
+
+        if (indent.length > 0) {
+          e.preventDefault();
+          const end = textarea.selectionEnd;
+          textarea.value = textarea.value.substring(0, start) + "\n" + indent + textarea.value.substring(end);
+          textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length;
+          handleEditorInput(editorId);
+        }
+      }
+    }
+
+    function toggleHint(elementId) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        el.classList.toggle("hidden");
+      }
+    }
+
+    // =========================================================================
+    // 11. МОБІЛЬНЕ МЕНЮ ТА МОДАЛЬНЕ ВІКНО СКИДАННЯ ПРОГРЕСУ
+    // =========================================================================
+    const sidebarEl = document.getElementById("sidebar");
+    const overlayEl = document.getElementById("mobile-overlay");
+
+    function openMobileSidebar() {
+      sidebarEl.classList.remove("-translate-x-full");
+      overlayEl.classList.remove("hidden");
+    }
+
+    function closeMobileSidebar() {
+      sidebarEl.classList.add("-translate-x-full");
+      overlayEl.classList.add("hidden");
+    }
+
+    document.getElementById("open-sidebar-btn").addEventListener("click", openMobileSidebar);
+    document.getElementById("close-sidebar-btn").addEventListener("click", closeMobileSidebar);
+    overlayEl.addEventListener("click", closeMobileSidebar);
+
+    const resetModal = document.getElementById("reset-modal");
+
+    function openResetModal() {
+      resetModal.classList.remove("hidden");
+      resetModal.classList.add("flex");
+    }
+
+    function closeResetModal() {
+      resetModal.classList.add("hidden");
+      resetModal.classList.remove("flex");
+    }
+
+    document.getElementById("cancel-reset-btn").addEventListener("click", closeResetModal);
+    document.getElementById("confirm-reset-btn").addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      state = { ...DEFAULT_STATE };
+      saveState();
+      closeResetModal();
+      updateGlobalHUD();
+      renderCurrentView();
+      showToast("Прогрес повністю скинуто. Починаємо з чистого аркуша!", "info");
+    });
+
+    // =========================================================================
+    // 12. ІНІЦІАЛІЗАЦІЯ ДОДАТКУ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ
+    // =========================================================================
+    window.addEventListener("DOMContentLoaded", () => {
+      updateDailyStreak();
+      updateGlobalHUD();
+      renderCurrentView();
+      initPyodideEngine();
+    });
+  </script>
+</body>
+</html>
